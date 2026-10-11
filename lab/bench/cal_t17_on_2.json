@@ -1,0 +1,487 @@
+{
+ "t3-as01-base-mix": {
+  "ms": 12.8,
+  "n_events": 24695,
+  "whole_ms": 16.72,
+  "sim": 7.6,
+  "out": 4.5
+ },
+ "t3-as02-scale-up-noise": {
+  "ms": 18.7,
+  "n_events": 42231,
+  "whole_ms": 23.63,
+  "sim": 11.8,
+  "out": 5.7
+ },
+ "t3-as03-mm-liquidity-heavy": {
+  "ms": 19.5,
+  "n_events": 50828,
+  "whole_ms": 23.78,
+  "sim": 12.9,
+  "out": 5.9
+ },
+ "t3-as04-value-heavy": {
+  "ms": 12.5,
+  "n_events": 26990,
+  "whole_ms": 16.15,
+  "sim": 7.4,
+  "out": 4.4
+ },
+ "t3-as05-oracle-variant": {
+  "ms": 12.4,
+  "n_events": 25443,
+  "whole_ms": 15.97,
+  "sim": 7.0,
+  "out": 4.6
+ },
+ "t3-as06-throughput-fast": {
+  "ms": 31.1,
+  "n_events": 74502,
+  "whole_ms": 37.03,
+  "sim": 20.8,
+  "out": 9.4
+ },
+ "t3-ca-baseline-calm": {
+  "ms": 14.9,
+  "n_events": 40257,
+  "whole_ms": 18.73,
+  "sim": 9.8,
+  "out": 4.4
+ },
+ "t3-ca-fast-mean-reversion": {
+  "ms": 13.7,
+  "n_events": 40280,
+  "whole_ms": 17.3,
+  "sim": 9.0,
+  "out": 4.0
+ },
+ "t3-ca-fat-tail-jumps": {
+  "ms": 31.2,
+  "n_events": 40283,
+  "whole_ms": 38.99,
+  "sim": 18.2,
+  "out": 11.8
+ },
+ "t3-ca-high-volatility": {
+  "ms": 19.0,
+  "n_events": 40237,
+  "whole_ms": 24.77,
+  "sim": 11.4,
+  "out": 6.8
+ },
+ "t3-ca-thin-book-depth": {
+  "ms": 14.6,
+  "n_events": 25746,
+  "whole_ms": 19.43,
+  "sim": 8.3,
+  "out": 5.5
+ },
+ "t3-cancelmodify-lifecycle": {
+  "ms": 65.0,
+  "n_events": 161529,
+  "whole_ms": 74.24,
+  "sim": 44.5,
+  "out": 19.8
+ },
+ "t3-coarse-tick-ties": {
+  "ms": 29.6,
+  "n_events": 72004,
+  "whole_ms": 35.72,
+  "sim": 20.5,
+  "out": 8.4
+ },
+ "t3-eq-deterministic-baseline": {
+  "ms": 7.6,
+  "n_events": 10669,
+  "whole_ms": 10.67,
+  "sim": 4.7,
+  "out": 2.6
+ },
+ "t3-eq-lognormal-highmag": {
+  "ms": 8.4,
+  "n_events": 14804,
+  "whole_ms": 11.6,
+  "sim": 4.3,
+  "out": 3.5
+ },
+ "t3-eq-lognormal-highsigma": {
+  "ms": 8.1,
+  "n_events": 14820,
+  "whole_ms": 11.19,
+  "sim": 4.3,
+  "out": 2.8
+ },
+ "t3-eq-lognormal-lowsigma": {
+  "ms": 8.5,
+  "n_events": 14379,
+  "whole_ms": 11.48,
+  "sim": 4.3,
+  "out": 3.5
+ },
+ "t3-eq-pareto-heavytail": {
+  "ms": 12.2,
+  "n_events": 14790,
+  "whole_ms": 16.57,
+  "sim": 6.7,
+  "out": 4.5
+ },
+ "t3-eq-uniform-tight": {
+  "ms": 9.4,
+  "n_events": 14704,
+  "whole_ms": 13.34,
+  "sim": 5.3,
+  "out": 3.7
+ },
+ "t3-eq-uniform-wide": {
+  "ms": 8.9,
+  "n_events": 14947,
+  "whole_ms": 12.07,
+  "sim": 4.8,
+  "out": 3.8
+ },
+ "t3-eq001-pareto-latency-tail": {
+  "ms": 9.0,
+  "n_events": 16377,
+  "whole_ms": 12.11,
+  "sim": 4.8,
+  "out": 3.5
+ },
+ "t3-fastlob-core": {
+  "ms": 31.1,
+  "n_events": 72061,
+  "whole_ms": 38.4,
+  "sim": 22.1,
+  "out": 8.2
+ },
+ "t3-fastlob-tight-book": {
+  "ms": 33.5,
+  "n_events": 72003,
+  "whole_ms": 39.75,
+  "sim": 22.8,
+  "out": 9.8
+ },
+ "t3-gb-base-30agent-30s": {
+  "ms": 19.6,
+  "n_events": 68351,
+  "whole_ms": 23.68,
+  "sim": 15.3,
+  "out": 3.6
+ },
+ "t3-gb-highfreq-40hz-60s": {
+  "ms": 186.1,
+  "n_events": 500530,
+  "whole_ms": 197.33,
+  "sim": 165.6,
+  "out": 18.8
+ },
+ "t3-gb-horizon-240s": {
+  "ms": 164.5,
+  "n_events": 555032,
+  "whole_ms": 177.85,
+  "sim": 134.7,
+  "out": 28.6
+ },
+ "t3-gb-mega-throughput": {
+  "ms": 355.3,
+  "n_events": 1168360,
+  "whole_ms": 377.53,
+  "sim": 304.2,
+  "out": 49.1
+ },
+ "t3-gb-pop-128-agents": {
+  "ms": 91.7,
+  "n_events": 303603,
+  "whole_ms": 100.5,
+  "sim": 76.7,
+  "out": 13.0
+ },
+ "t3-gb-pop-horizon-scale": {
+  "ms": 201.2,
+  "n_events": 725591,
+  "whole_ms": 218.59,
+  "sim": 175.4,
+  "out": 24.4
+ },
+ "t3-gbatch-dense-3": {
+  "ms": 8.82,
+  "n_events": 24751,
+  "whole_ms": 8.82
+ },
+ "t3-gbatch-hetero-mix": {
+  "ms": 15.85,
+  "n_events": 56712,
+  "whole_ms": 15.85
+ },
+ "t3-gbatch-homog-4": {
+  "ms": 9.0,
+  "n_events": 32580,
+  "whole_ms": 9.0
+ },
+ "t3-gbatch-homog-8": {
+  "ms": 14.04,
+  "n_events": 65163,
+  "whole_ms": 14.04
+ },
+ "t3-gbatch-many-6": {
+  "ms": 16.17,
+  "n_events": 48881,
+  "whole_ms": 16.17
+ },
+ "t3-gbatch-varsize": {
+  "ms": 9.06,
+  "n_events": 34639,
+  "whole_ms": 9.06
+ },
+ "t3-momentum-mix-priority": {
+  "ms": 21.2,
+  "n_events": 71980,
+  "whole_ms": 26.26,
+  "sim": 14.9,
+  "out": 5.8
+ },
+ "t3-mp01-stp-newest-baseline": {
+  "ms": 28.2,
+  "n_events": 72044,
+  "whole_ms": 33.53,
+  "sim": 19.0,
+  "out": 8.4
+ },
+ "t3-mp02-stp-oldest-baseline": {
+  "ms": 26.1,
+  "n_events": 72049,
+  "whole_ms": 31.79,
+  "sim": 17.0,
+  "out": 8.4
+ },
+ "t3-mp03-mm-heavy-newest": {
+  "ms": 52.3,
+  "n_events": 120920,
+  "whole_ms": 63.75,
+  "sim": 33.7,
+  "out": 17.8
+ },
+ "t3-mp04-mm-heavy-oldest": {
+  "ms": 50.3,
+  "n_events": 120915,
+  "whole_ms": 59.52,
+  "sim": 33.8,
+  "out": 15.6
+ },
+ "t3-mp05-cancel-churn-newest": {
+  "ms": 131.2,
+  "n_events": 240829,
+  "whole_ms": 157.16,
+  "sim": 86.1,
+  "out": 44.0
+ },
+ "t3-mp06-tight-spread-selfcross": {
+  "ms": 29.1,
+  "n_events": 80929,
+  "whole_ms": 35.59,
+  "sim": 20.4,
+  "out": 7.9
+ },
+ "t3-mp07-heavy-flow-oldest": {
+  "ms": 21.1,
+  "n_events": 72036,
+  "whole_ms": 26.24,
+  "sim": 13.6,
+  "out": 6.9
+ },
+ "t3-mr-cancel-replace-churn": {
+  "ms": 109.9,
+  "n_events": 322007,
+  "whole_ms": 124.09,
+  "sim": 75.3,
+  "out": 34.0
+ },
+ "t3-mr-checkpoint-cadence-fine": {
+  "ms": 48.4,
+  "n_events": 161055,
+  "whole_ms": 57.11,
+  "sim": 33.9,
+  "out": 13.8
+ },
+ "t3-mr-deep-book-state-size": {
+  "ms": 103.6,
+  "n_events": 319488,
+  "whole_ms": 117.34,
+  "sim": 74.3,
+  "out": 28.5
+ },
+ "t3-mr-long-horizon-replay": {
+  "ms": 28.0,
+  "n_events": 81221,
+  "whole_ms": 33.4,
+  "sim": 19.1,
+  "out": 8.2
+ },
+ "t3-multilevel-crossing": {
+  "ms": 23.6,
+  "n_events": 72250,
+  "whole_ms": 29.02,
+  "sim": 15.8,
+  "out": 7.2
+ },
+ "t3-partialfill-atomicity": {
+  "ms": 26.1,
+  "n_events": 72052,
+  "whole_ms": 32.32,
+  "sim": 17.3,
+  "out": 7.8
+ },
+ "t3-ra01-fundamental-shock-mid": {
+  "ms": 27.6,
+  "n_events": 36431,
+  "whole_ms": 34.89,
+  "sim": 16.6,
+  "out": 10.0
+ },
+ "t3-ra02-shock-early": {
+  "ms": 20.3,
+  "n_events": 35381,
+  "whole_ms": 27.0,
+  "sim": 11.1,
+  "out": 8.3
+ },
+ "t3-ra03-large-shock": {
+  "ms": 26.0,
+  "n_events": 36330,
+  "whole_ms": 31.98,
+  "sim": 17.3,
+  "out": 7.4
+ },
+ "t3-ra04-shock-late": {
+  "ms": 24.5,
+  "n_events": 34953,
+  "whole_ms": 31.96,
+  "sim": 14.3,
+  "out": 8.5
+ },
+ "t3-ra05-shock-momentum-heavy": {
+  "ms": 19.6,
+  "n_events": 35697,
+  "whole_ms": 25.12,
+  "sim": 11.9,
+  "out": 6.8
+ },
+ "t3-ra06-shock-value-heavy": {
+  "ms": 16.4,
+  "n_events": 35298,
+  "whole_ms": 21.07,
+  "sim": 9.9,
+  "out": 5.6
+ },
+ "t3-s001-price-time-priority": {
+  "ms": 2.8,
+  "n_events": 604,
+  "whole_ms": 7.42,
+  "sim": 0.4,
+  "out": 2.0
+ },
+ "t3-s012-partial-fill-cancel-race": {
+  "ms": 64.0,
+  "n_events": 202291,
+  "whole_ms": 74.17,
+  "sim": 44.5,
+  "out": 18.9
+ },
+ "t3-s019-latency-jitter-kendall": {
+  "ms": 8.3,
+  "n_events": 12328,
+  "whole_ms": 11.64,
+  "sim": 4.0,
+  "out": 3.6
+ },
+ "t3-sf-01-baseline-regime": {
+  "ms": 25.8,
+  "n_events": 71932,
+  "whole_ms": 32.18,
+  "sim": 16.8,
+  "out": 8.2
+ },
+ "t3-sf-02-heavy-jump-tails": {
+  "ms": 36.5,
+  "n_events": 71966,
+  "whole_ms": 51.26,
+  "sim": 24.2,
+  "out": 11.3
+ },
+ "t3-sf-03-vol-clustering-momentum": {
+  "ms": 47.0,
+  "n_events": 71827,
+  "whole_ms": 56.74,
+  "sim": 34.2,
+  "out": 11.1
+ },
+ "t3-sf-04-thin-book-depth": {
+  "ms": 38.5,
+  "n_events": 72093,
+  "whole_ms": 46.58,
+  "sim": 23.2,
+  "out": 14.2
+ },
+ "t3-sf-05-deep-book-liquidity": {
+  "ms": 46.6,
+  "n_events": 82591,
+  "whole_ms": 56.02,
+  "sim": 32.1,
+  "out": 13.3
+ },
+ "t3-sf-06-high-fundamental-vol": {
+  "ms": 25.8,
+  "n_events": 71960,
+  "whole_ms": 30.66,
+  "sim": 17.0,
+  "out": 8.0
+ },
+ "t3-sf-07-coarse-agent-batch": {
+  "ms": 24.3,
+  "n_events": 71935,
+  "whole_ms": 29.36,
+  "sim": 15.7,
+  "out": 8.0
+ },
+ "t3-st01-liquidity-churn-baseline": {
+  "ms": 20.1,
+  "n_events": 72034,
+  "whole_ms": 26.84,
+  "sim": 12.9,
+  "out": 6.7
+ },
+ "t3-st02-informed-entry-burst": {
+  "ms": 22.2,
+  "n_events": 72075,
+  "whole_ms": 26.99,
+  "sim": 13.7,
+  "out": 7.9
+ },
+ "t3-st03-volatility-burst": {
+  "ms": 22.6,
+  "n_events": 72020,
+  "whole_ms": 28.55,
+  "sim": 14.7,
+  "out": 7.1
+ },
+ "t3-st04-thin-book-mm-strain": {
+  "ms": 15.3,
+  "n_events": 36251,
+  "whole_ms": 20.07,
+  "sim": 8.7,
+  "out": 6.0
+ },
+ "t3-st05-latency-spike-pareto": {
+  "ms": 25.1,
+  "n_events": 71980,
+  "whole_ms": 31.14,
+  "sim": 15.8,
+  "out": 8.6
+ },
+ "t3-stp-cancel-newest": {
+  "ms": 24.5,
+  "n_events": 72048,
+  "whole_ms": 30.18,
+  "sim": 16.2,
+  "out": 7.4
+ }
+}

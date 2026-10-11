@@ -1,0 +1,16 @@
+== tables
+checked 65, bad 0, total process time 5.66 s
+== no-ledger units
+units checked 6, bad 0
+== byte stability
+gb_mega_throughput stable=1 same_without_writer_threads=1
+mr_deep_book_state_size stable=1 same_without_writer_threads=1
+eq_deterministic_baseline stable=1 same_without_writer_threads=1
+mp05_cancel_churn_newest stable=1 same_without_writer_threads=1
+as01_base_mix stable=1 same_without_writer_threads=1
+== negative-latency cases
+reference sub13: handled by the launcher itself: 29 of 29
+sub15: handled by the launcher itself: 29 of 29
+sub15 without writer threads: handled by the launcher itself: 29 of 29
+against the reference: equal 29, different 0
+without writer threads, against the reference: equal 29, different 0

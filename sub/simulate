@@ -1,0 +1,4 @@
+#!/bin/sh
+# Track 3 submission CLI shim:  simulate --config /input/scenario.json --out /output/trace.parquet
+# Native bit-exact engine (t3native); falls back to the ABIDES reference adapter when unsupported.
+exec python -m t3native.cli "$@"

@@ -1,0 +1,35 @@
+# The launcher alone on an empty base image: one layer, about 1.4 MB.
+#
+# Why: container time is ranked, and the teams at the top of the Development board ship images of
+# this shape. Whatever part of the fixed per-container time depends on the image (the GPU runtime
+# hook scanning the root filesystem for libraries, layer mounts, a first pull) is minimal here.
+#
+# Trade-off: there is NO Python fallback in this image. A scenario the launcher declines makes the
+# container exit with status 127 and the unit scores 0. The 71 public units (the whole Development
+# roster) are all handled by the launcher. Decide deliberately before using this for the Final.
+#
+#   docker build -f Dockerfile.min --build-arg BASE=agenthon-track3:sub7 -t agenthon-track3:sub7s .
+ARG BASE=agenthon-track3:sub7
+FROM --platform=linux/amd64 ${BASE} AS full
+# One binary under two names; the empty directories are the ones container runtimes and GPU hooks
+# expect to find (mount points, library directories, a scratch area).
+RUN mkdir -p /image/usr/local/bin /image/etc /image/run /image/tmp /image/input /image/output \
+             /image/usr/bin /image/usr/lib/x86_64-linux-gnu /image/lib64 /image/proc /image/sys /image/dev \
+    && cp /usr/local/bin/simulate /image/usr/local/bin/simulate \
+    && ln -s simulate /image/usr/local/bin/simulate-batch \
+    && chmod 1777 /image/tmp \
+    && printf 'root:x:0:0:root:/:/sbin/nologin\nnobody:x:65534:65534:nobody:/:/sbin/nologin\n' > /image/etc/passwd \
+    && printf 'root:x:0:\nnogroup:x:65534:\n' > /image/etc/group
+
+FROM scratch
+LABEL qfbench2.interface_version="2.0"
+COPY --from=full /image/ /
+ENV PATH=/usr/local/bin
+# Memory switches read by the engine (see engine.cpp): 1 keeps the default behaviour. Building with
+# --build-arg T3_HUGE=0 --build-arg T3_PREFAULT=0 gives the same binary a different memory mode.
+ARG T3_HUGE=1
+ARG T3_PREFAULT=1
+# T3_TRAIL: see Dockerfile (writer threads during the run).
+ARG T3_TRAIL=0
+ENV T3_HUGE=${T3_HUGE} T3_PREFAULT=${T3_PREFAULT} T3_TRAIL=${T3_TRAIL}
+CMD ["simulate", "--help"]

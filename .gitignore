@@ -1,0 +1,66 @@
+# ---- Third-party checkouts (fetch with scripts/fetch_upstream.sh) ----
+/track3-upstream/
+/track3-simulation-public-clone/
+/toolkit-v2.5.1/
+/workspace-*/
+/lab/abides_core_orig/
+/lab/abides_markets_orig/
+/native/fuzz/absrc/
+
+# ---- Local-only material ----
+/_archive/
+/docker_backup/
+
+# ---- Submission descriptors (team identifiers and signed claims) ----
+/sub/submission.json
+/sub/submission/
+*.zip
+
+# ---- Generated outputs ----
+*.parquet
+*.so
+*.o
+*.tar
+*.gcda
+*.profraw
+/repro/out*/
+/native/refdump/runs/
+/native/fuzz/out/
+/native/engine/pgo_bins/
+/lab/e2e/
+/lab/ab1/
+/lab/reg_*/
+/lab/batch_*/
+/lab/rt/
+/lab/base_large/
+/lab/bench/val_*/
+/lab/bench/skip_*/
+/lab/bench/batch*/
+/lab/bench/build_*.log
+/lab/agent240/
+/sub/native/
+/sub/t3native/
+
+# ---- Python / editor / OS ----
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+/native/engine/bins/
+/native/engine/lag/
+/native/fuzz/recheck/
+/lab/bench/rt/
+/lab/bench/rt.*
+/lab/bench/min7/
+/lab/bench/min7.err
+/lab/bench/build*.log
+/native/rng/full_run.log
+
+# ---- Third-party material gathered during research (other teams' repositories, API dumps) ----
+/lab/agent220/osint/
+
+# ---- Saved copies of submission descriptors (team identifiers) ----
+/lab/bench/submission_*.json

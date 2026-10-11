@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software or its report, please cite it as below."
+title: "When the Container Is the Benchmark: A Bit-Exact Native Reimplementation of the ABIDES Market Simulator and What Whole-Container Timing Rewards"
+type: software
+authors:
+  - name: "Shashwat"
+    affiliation: "Independent Researcher"
+version: "1.0"
+date-released: "2026-10-09"
+license: Apache-2.0
+keywords:
+  - agent-based simulation
+  - market microstructure
+  - ABIDES
+  - bit-exact reproduction
+  - benchmarking

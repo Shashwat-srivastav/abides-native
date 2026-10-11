@@ -1,0 +1,18 @@
+== tables 65
+rc=0 checked 65, bad 0, total process time 13.37 s
+== repeat-run bytes
+identical across 3 runs: 65, differing: 0
+== batch 6 under restrictions
+batch units bad: 0
+== single + forced fallback under restrictions
+T3_X=0 rc=0 files=3
+T3_NO_LAUNCHER=1 rc=0 files=3
+== official regression
+rc=0 {'candidate_image': 'agenthon-track3:sub9', 'total_scenarios': 65, 'passed': 65, 'failed': 0, 'errored': 0}
+== fuzz corpus
+rc=0
+progress 1300 of 1318 1384 s
+cases 1318 skipped (no OK reference) 197 seconds 1401
+      22  OK python-native / handed-to-python
+    1296  OK python-native / launcher
+== DONE

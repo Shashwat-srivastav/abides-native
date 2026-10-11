@@ -1,0 +1,522 @@
+{
+ "t3-as01-base-mix": {
+  "ms": 44.1,
+  "n_events": 24695,
+  "minflt": 1024,
+  "maxrss_mb": 13,
+  "out_bytes": 475324,
+  "ledger": true
+ },
+ "t3-as02-scale-up-noise": {
+  "ms": 62.9,
+  "n_events": 42231,
+  "minflt": 1698,
+  "maxrss_mb": 13,
+  "out_bytes": 786122,
+  "ledger": true
+ },
+ "t3-as03-mm-liquidity-heavy": {
+  "ms": 85.5,
+  "n_events": 50828,
+  "minflt": 1735,
+  "maxrss_mb": 13,
+  "out_bytes": 819227,
+  "ledger": true
+ },
+ "t3-as04-value-heavy": {
+  "ms": 61.5,
+  "n_events": 26990,
+  "minflt": 1070,
+  "maxrss_mb": 13,
+  "out_bytes": 511538,
+  "ledger": true
+ },
+ "t3-as05-oracle-variant": {
+  "ms": 48.3,
+  "n_events": 25443,
+  "minflt": 1020,
+  "maxrss_mb": 13,
+  "out_bytes": 478200,
+  "ledger": true
+ },
+ "t3-as06-throughput-fast": {
+  "ms": 95.2,
+  "n_events": 74502,
+  "minflt": 2639,
+  "maxrss_mb": 13,
+  "out_bytes": 1337540,
+  "ledger": true
+ },
+ "t3-ca-baseline-calm": {
+  "ms": 52.0,
+  "n_events": 40257,
+  "minflt": 1436,
+  "maxrss_mb": 13,
+  "out_bytes": 724251,
+  "ledger": true
+ },
+ "t3-ca-fast-mean-reversion": {
+  "ms": 51.1,
+  "n_events": 40280,
+  "minflt": 1448,
+  "maxrss_mb": 13,
+  "out_bytes": 724317,
+  "ledger": true
+ },
+ "t3-ca-fat-tail-jumps": {
+  "ms": 50.7,
+  "n_events": 40283,
+  "minflt": 1448,
+  "maxrss_mb": 13,
+  "out_bytes": 726003,
+  "ledger": true
+ },
+ "t3-ca-high-volatility": {
+  "ms": 37.8,
+  "n_events": 40237,
+  "minflt": 1448,
+  "maxrss_mb": 13,
+  "out_bytes": 723658,
+  "ledger": true
+ },
+ "t3-ca-thin-book-depth": {
+  "ms": 26.3,
+  "n_events": 25746,
+  "minflt": 1020,
+  "maxrss_mb": 13,
+  "out_bytes": 508587,
+  "ledger": true
+ },
+ "t3-cancelmodify-lifecycle": {
+  "ms": 63.7,
+  "n_events": 161529,
+  "minflt": 5144,
+  "maxrss_mb": 19,
+  "out_bytes": 2669065,
+  "ledger": true
+ },
+ "t3-coarse-tick-ties": {
+  "ms": 39.7,
+  "n_events": 72004,
+  "minflt": 2324,
+  "maxrss_mb": 13,
+  "out_bytes": 1183975,
+  "ledger": true
+ },
+ "t3-eq-deterministic-baseline": {
+  "ms": 19.7,
+  "n_events": 10669,
+  "minflt": 607,
+  "maxrss_mb": 13,
+  "out_bytes": 310708,
+  "ledger": true
+ },
+ "t3-eq-lognormal-highmag": {
+  "ms": 22.9,
+  "n_events": 14804,
+  "minflt": 656,
+  "maxrss_mb": 13,
+  "out_bytes": 372407,
+  "ledger": true
+ },
+ "t3-eq-lognormal-highsigma": {
+  "ms": 19.5,
+  "n_events": 14820,
+  "minflt": 653,
+  "maxrss_mb": 13,
+  "out_bytes": 350574,
+  "ledger": true
+ },
+ "t3-eq-lognormal-lowsigma": {
+  "ms": 20.3,
+  "n_events": 14379,
+  "minflt": 660,
+  "maxrss_mb": 13,
+  "out_bytes": 321501,
+  "ledger": true
+ },
+ "t3-eq-pareto-heavytail": {
+  "ms": 21.8,
+  "n_events": 14790,
+  "minflt": 663,
+  "maxrss_mb": 13,
+  "out_bytes": 325056,
+  "ledger": true
+ },
+ "t3-eq-uniform-tight": {
+  "ms": 22.5,
+  "n_events": 14704,
+  "minflt": 642,
+  "maxrss_mb": 13,
+  "out_bytes": 313569,
+  "ledger": true
+ },
+ "t3-eq-uniform-wide": {
+  "ms": 25.4,
+  "n_events": 14947,
+  "minflt": 635,
+  "maxrss_mb": 13,
+  "out_bytes": 363378,
+  "ledger": true
+ },
+ "t3-eq001-pareto-latency-tail": {
+  "ms": 22.8,
+  "n_events": 16377,
+  "minflt": 738,
+  "maxrss_mb": 13,
+  "out_bytes": 353636,
+  "ledger": true
+ },
+ "t3-fastlob-core": {
+  "ms": 39.5,
+  "n_events": 72061,
+  "minflt": 2320,
+  "maxrss_mb": 13,
+  "out_bytes": 1176055,
+  "ledger": true
+ },
+ "t3-fastlob-tight-book": {
+  "ms": 37.1,
+  "n_events": 72003,
+  "minflt": 2454,
+  "maxrss_mb": 13,
+  "out_bytes": 1314265,
+  "ledger": true
+ },
+ "t3-gb-base-30agent-30s": {
+  "ms": 36.4,
+  "n_events": 68351,
+  "minflt": 1155,
+  "maxrss_mb": 13,
+  "out_bytes": 465182,
+  "ledger": false
+ },
+ "t3-gb-highfreq-40hz-60s": {
+  "ms": 177.5,
+  "n_events": 500530,
+  "minflt": 7600,
+  "maxrss_mb": 30,
+  "out_bytes": 3421321,
+  "ledger": false
+ },
+ "t3-gb-horizon-240s": {
+  "ms": 204.9,
+  "n_events": 555032,
+  "minflt": 8362,
+  "maxrss_mb": 33,
+  "out_bytes": 3992427,
+  "ledger": false
+ },
+ "t3-gb-mega-throughput": {
+  "ms": 464.8,
+  "n_events": 1168360,
+  "minflt": 17728,
+  "maxrss_mb": 68,
+  "out_bytes": 8254984,
+  "ledger": false
+ },
+ "t3-gb-pop-128-agents": {
+  "ms": 232.8,
+  "n_events": 303603,
+  "minflt": 4764,
+  "maxrss_mb": 19,
+  "out_bytes": 2035108,
+  "ledger": false
+ },
+ "t3-gb-pop-horizon-scale": {
+  "ms": 305.2,
+  "n_events": 725591,
+  "minflt": 11372,
+  "maxrss_mb": 43,
+  "out_bytes": 5042393,
+  "ledger": false
+ },
+ "t3-momentum-mix-priority": {
+  "ms": 45.6,
+  "n_events": 71980,
+  "minflt": 2320,
+  "maxrss_mb": 13,
+  "out_bytes": 1177139,
+  "ledger": true
+ },
+ "t3-mp01-stp-newest-baseline": {
+  "ms": 42.2,
+  "n_events": 72044,
+  "minflt": 2337,
+  "maxrss_mb": 13,
+  "out_bytes": 1250556,
+  "ledger": true
+ },
+ "t3-mp02-stp-oldest-baseline": {
+  "ms": 37.7,
+  "n_events": 72049,
+  "minflt": 2342,
+  "maxrss_mb": 13,
+  "out_bytes": 1245626,
+  "ledger": true
+ },
+ "t3-mp03-mm-heavy-newest": {
+  "ms": 53.8,
+  "n_events": 120920,
+  "minflt": 3841,
+  "maxrss_mb": 14,
+  "out_bytes": 2051825,
+  "ledger": true
+ },
+ "t3-mp04-mm-heavy-oldest": {
+  "ms": 55.6,
+  "n_events": 120915,
+  "minflt": 3821,
+  "maxrss_mb": 14,
+  "out_bytes": 2049426,
+  "ledger": true
+ },
+ "t3-mp05-cancel-churn-newest": {
+  "ms": 84.9,
+  "n_events": 240829,
+  "minflt": 7413,
+  "maxrss_mb": 27,
+  "out_bytes": 3875171,
+  "ledger": true
+ },
+ "t3-mp06-tight-spread-selfcross": {
+  "ms": 39.3,
+  "n_events": 80929,
+  "minflt": 2625,
+  "maxrss_mb": 13,
+  "out_bytes": 1367240,
+  "ledger": true
+ },
+ "t3-mp07-heavy-flow-oldest": {
+  "ms": 43.2,
+  "n_events": 72036,
+  "minflt": 2359,
+  "maxrss_mb": 13,
+  "out_bytes": 1257583,
+  "ledger": true
+ },
+ "t3-mr-cancel-replace-churn": {
+  "ms": 117.8,
+  "n_events": 322007,
+  "minflt": 9938,
+  "maxrss_mb": 37,
+  "out_bytes": 5256467,
+  "ledger": true
+ },
+ "t3-mr-checkpoint-cadence-fine": {
+  "ms": 69.8,
+  "n_events": 161055,
+  "minflt": 5132,
+  "maxrss_mb": 19,
+  "out_bytes": 2661590,
+  "ledger": true
+ },
+ "t3-mr-deep-book-state-size": {
+  "ms": 120.0,
+  "n_events": 319488,
+  "minflt": 9614,
+  "maxrss_mb": 36,
+  "out_bytes": 4732346,
+  "ledger": true
+ },
+ "t3-mr-long-horizon-replay": {
+  "ms": 43.1,
+  "n_events": 81221,
+  "minflt": 2672,
+  "maxrss_mb": 13,
+  "out_bytes": 1362919,
+  "ledger": true
+ },
+ "t3-multilevel-crossing": {
+  "ms": 42.7,
+  "n_events": 72250,
+  "minflt": 2392,
+  "maxrss_mb": 13,
+  "out_bytes": 1294269,
+  "ledger": true
+ },
+ "t3-partialfill-atomicity": {
+  "ms": 44.4,
+  "n_events": 72052,
+  "minflt": 2324,
+  "maxrss_mb": 13,
+  "out_bytes": 1196365,
+  "ledger": true
+ },
+ "t3-ra01-fundamental-shock-mid": {
+  "ms": 31.1,
+  "n_events": 36431,
+  "minflt": 1353,
+  "maxrss_mb": 13,
+  "out_bytes": 715534,
+  "ledger": true
+ },
+ "t3-ra02-shock-early": {
+  "ms": 31.0,
+  "n_events": 35381,
+  "minflt": 1334,
+  "maxrss_mb": 13,
+  "out_bytes": 705846,
+  "ledger": true
+ },
+ "t3-ra03-large-shock": {
+  "ms": 39.8,
+  "n_events": 36330,
+  "minflt": 1358,
+  "maxrss_mb": 13,
+  "out_bytes": 716162,
+  "ledger": true
+ },
+ "t3-ra04-shock-late": {
+  "ms": 31.5,
+  "n_events": 34953,
+  "minflt": 1326,
+  "maxrss_mb": 13,
+  "out_bytes": 700422,
+  "ledger": true
+ },
+ "t3-ra05-shock-momentum-heavy": {
+  "ms": 30.8,
+  "n_events": 35697,
+  "minflt": 1356,
+  "maxrss_mb": 13,
+  "out_bytes": 715351,
+  "ledger": true
+ },
+ "t3-ra06-shock-value-heavy": {
+  "ms": 29.4,
+  "n_events": 35298,
+  "minflt": 1342,
+  "maxrss_mb": 13,
+  "out_bytes": 713432,
+  "ledger": true
+ },
+ "t3-s001-price-time-priority": {
+  "ms": 15.8,
+  "n_events": 604,
+  "minflt": 109,
+  "maxrss_mb": 13,
+  "out_bytes": 16962,
+  "ledger": true
+ },
+ "t3-s012-partial-fill-cancel-race": {
+  "ms": 90.7,
+  "n_events": 202291,
+  "minflt": 6366,
+  "maxrss_mb": 24,
+  "out_bytes": 3339056,
+  "ledger": true
+ },
+ "t3-s019-latency-jitter-kendall": {
+  "ms": 20.4,
+  "n_events": 12328,
+  "minflt": 555,
+  "maxrss_mb": 13,
+  "out_bytes": 288176,
+  "ledger": true
+ },
+ "t3-sf-01-baseline-regime": {
+  "ms": 41.9,
+  "n_events": 71932,
+  "minflt": 2357,
+  "maxrss_mb": 13,
+  "out_bytes": 1282706,
+  "ledger": true
+ },
+ "t3-sf-02-heavy-jump-tails": {
+  "ms": 37.3,
+  "n_events": 71966,
+  "minflt": 2347,
+  "maxrss_mb": 13,
+  "out_bytes": 1283338,
+  "ledger": true
+ },
+ "t3-sf-03-vol-clustering-momentum": {
+  "ms": 37.1,
+  "n_events": 71827,
+  "minflt": 2345,
+  "maxrss_mb": 13,
+  "out_bytes": 1281731,
+  "ledger": true
+ },
+ "t3-sf-04-thin-book-depth": {
+  "ms": 39.1,
+  "n_events": 72093,
+  "minflt": 2506,
+  "maxrss_mb": 13,
+  "out_bytes": 1401062,
+  "ledger": true
+ },
+ "t3-sf-05-deep-book-liquidity": {
+  "ms": 41.3,
+  "n_events": 82591,
+  "minflt": 2694,
+  "maxrss_mb": 13,
+  "out_bytes": 1393985,
+  "ledger": true
+ },
+ "t3-sf-06-high-fundamental-vol": {
+  "ms": 36.6,
+  "n_events": 71960,
+  "minflt": 2356,
+  "maxrss_mb": 13,
+  "out_bytes": 1284610,
+  "ledger": true
+ },
+ "t3-sf-07-coarse-agent-batch": {
+  "ms": 39.1,
+  "n_events": 71935,
+  "minflt": 2322,
+  "maxrss_mb": 13,
+  "out_bytes": 1263794,
+  "ledger": true
+ },
+ "t3-st01-liquidity-churn-baseline": {
+  "ms": 37.9,
+  "n_events": 72034,
+  "minflt": 2380,
+  "maxrss_mb": 13,
+  "out_bytes": 1266488,
+  "ledger": true
+ },
+ "t3-st02-informed-entry-burst": {
+  "ms": 36.7,
+  "n_events": 72075,
+  "minflt": 2397,
+  "maxrss_mb": 13,
+  "out_bytes": 1322248,
+  "ledger": true
+ },
+ "t3-st03-volatility-burst": {
+  "ms": 36.9,
+  "n_events": 72020,
+  "minflt": 2378,
+  "maxrss_mb": 13,
+  "out_bytes": 1271350,
+  "ledger": true
+ },
+ "t3-st04-thin-book-mm-strain": {
+  "ms": 34.8,
+  "n_events": 36251,
+  "minflt": 1506,
+  "maxrss_mb": 13,
+  "out_bytes": 818115,
+  "ledger": true
+ },
+ "t3-st05-latency-spike-pareto": {
+  "ms": 40.2,
+  "n_events": 71980,
+  "minflt": 2385,
+  "maxrss_mb": 13,
+  "out_bytes": 1301687,
+  "ledger": true
+ },
+ "t3-stp-cancel-newest": {
+  "ms": 38.1,
+  "n_events": 72048,
+  "minflt": 2322,
+  "maxrss_mb": 13,
+  "out_bytes": 1192257,
+  "ledger": true
+ }
+}

@@ -1,0 +1,54 @@
+0 as06_throughput_fast agenthon-track3:dev 10721
+0 as06_throughput_fast agenthon-track3:cand1 16628
+0 as06_throughput_fast agenthon-track3:cand2 21200
+0 fastlob_core agenthon-track3:dev 12555
+0 fastlob_core agenthon-track3:cand1 22069
+0 fastlob_core agenthon-track3:cand2 27779
+0 eq_lognormal_highsigma agenthon-track3:dev 11078
+0 eq_lognormal_highsigma agenthon-track3:cand1 19165
+0 eq_lognormal_highsigma agenthon-track3:cand2 20204
+0 mp07_heavy_flow_oldest agenthon-track3:dev 12424
+0 mp07_heavy_flow_oldest agenthon-track3:cand1 24325
+0 mp07_heavy_flow_oldest agenthon-track3:cand2 27727
+0 ra05_shock_momentum_heavy agenthon-track3:dev 12110
+0 ra05_shock_momentum_heavy agenthon-track3:cand1 22178
+0 ra05_shock_momentum_heavy agenthon-track3:cand2 22203
+1 as06_throughput_fast agenthon-track3:dev 11331
+1 as06_throughput_fast agenthon-track3:cand1 16872
+1 as06_throughput_fast agenthon-track3:cand2 21121
+1 fastlob_core agenthon-track3:dev 12525
+1 fastlob_core agenthon-track3:cand1 18475
+1 fastlob_core agenthon-track3:cand2 20887
+1 eq_lognormal_highsigma agenthon-track3:dev 7059
+1 eq_lognormal_highsigma agenthon-track3:cand1 12874
+1 eq_lognormal_highsigma agenthon-track3:cand2 16038
+1 mp07_heavy_flow_oldest agenthon-track3:dev 9748
+1 mp07_heavy_flow_oldest agenthon-track3:cand1 20496
+1 mp07_heavy_flow_oldest agenthon-track3:cand2 25330
+1 ra05_shock_momentum_heavy agenthon-track3:dev 10068
+1 ra05_shock_momentum_heavy agenthon-track3:cand1 20166
+1 ra05_shock_momentum_heavy agenthon-track3:cand2 18776
+2 as06_throughput_fast agenthon-track3:dev 10491
+2 as06_throughput_fast agenthon-track3:cand1 18673
+2 as06_throughput_fast agenthon-track3:cand2 20119
+2 fastlob_core agenthon-track3:dev 11168
+2 fastlob_core agenthon-track3:cand1 22082
+2 fastlob_core agenthon-track3:cand2 27340
+2 eq_lognormal_highsigma agenthon-track3:dev 10008
+2 eq_lognormal_highsigma agenthon-track3:cand1 14182
+2 eq_lognormal_highsigma agenthon-track3:cand2 16999
+2 mp07_heavy_flow_oldest agenthon-track3:dev 10289
+2 mp07_heavy_flow_oldest agenthon-track3:cand1 23933
+2 mp07_heavy_flow_oldest agenthon-track3:cand2 25038
+2 ra05_shock_momentum_heavy agenthon-track3:dev 11935
+2 ra05_shock_momentum_heavy agenthon-track3:cand1 21577
+2 ra05_shock_momentum_heavy agenthon-track3:cand2 23414
+
+scenario                          agenthon-track3:dev     agenthon-track3:cand1     agenthon-track3:cand2
+as06_throughput_fast                10721 (1.00x)            16872 (1.57x)            21121 (1.97x)   
+fastlob_core                        12525 (1.00x)            22069 (1.76x)            27340 (2.18x)   
+eq_lognormal_highsigma              10008 (1.00x)            14182 (1.42x)            16999 (1.70x)   
+mp07_heavy_flow_oldest              10289 (1.00x)            23933 (2.33x)            25330 (2.46x)   
+ra05_shock_momentum_heavy           11935 (1.00x)            21577 (1.81x)            22203 (1.86x)   
+mean-of-medians                     11096 (1.00x)            19727 (1.78x)            22598 (2.04x)   
+all hashes identical across images and repeats: OK

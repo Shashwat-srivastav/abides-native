@@ -1,0 +1,2 @@
+FROM t3-native-dev
+RUN apt-get update && apt-get install -y --no-install-recommends linux-perf && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,12 @@
+{
+  "scenario_id": "fz30268",
+  "seed": 753837405,
+  "n_events": 21438,
+  "wall_clock_sec": 0.01175178399989818,
+  "events_per_sec": 1824233.665304412,
+  "trace_sha256": "e6207aba45608cd98d4b315be9e7c0a2938ce4365e4888f1867ae5563f6e5efc",
+  "n_messages": 32449,
+  "message_trace_sha256": "19a86fddd9009b8f3a8d5fd19f7d7f32b1fc550b7c69decbd537f5b93c3602b8",
+  "peak_memory_bytes": 8355840,
+  "gpu_seconds": 0.0
+}

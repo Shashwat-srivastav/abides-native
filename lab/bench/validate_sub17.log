@@ -1,0 +1,10 @@
+== tables 65
+rc=0 checked 65, bad 0, total process time 17.58 s
+== repeat-run bytes
+identical across 3 runs: 65, differing: 0
+== batch 6 under restrictions
+batch units bad: 0
+== single + forced fallback under restrictions
+T3_X=0 rc=0 files=3
+T3_NO_LAUNCHER=1 rc=0 files=3
+nohup: failed to run command 'setsid': No such file or directory

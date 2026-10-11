@@ -1,0 +1,6 @@
+# Toolchain for the RNG bit-exactness tests: the same Python/numpy as the submission image + g++.
+FROM --platform=linux/amd64 python:3.11-slim
+RUN pip install --no-cache-dir numpy==1.26.4 \
+    && apt-get update && apt-get install -y --no-install-recommends g++ \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /rng

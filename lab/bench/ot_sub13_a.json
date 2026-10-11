@@ -1,0 +1,30 @@
+{
+ "t3-gb-mega-throughput": {
+  "ms": 439.9,
+  "n_events": 1168360
+ },
+ "t3-gb-pop-horizon-scale": {
+  "ms": 219.2,
+  "n_events": 725591
+ },
+ "t3-mr-deep-book-state-size": {
+  "ms": 99.1,
+  "n_events": 319488
+ },
+ "t3-mp05-cancel-churn-newest": {
+  "ms": 83.6,
+  "n_events": 240829
+ },
+ "t3-mr-cancel-replace-churn": {
+  "ms": 101.0,
+  "n_events": 322007
+ },
+ "t3-eq-deterministic-baseline": {
+  "ms": 20.4,
+  "n_events": 10669
+ },
+ "t3-as01-base-mix": {
+  "ms": 27.6,
+  "n_events": 24695
+ }
+}

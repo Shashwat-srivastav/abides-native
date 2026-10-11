@@ -1,0 +1,131 @@
+# Track 3 baseline image: pinned upstream ABIDES + the `abides_fork` simulate adapter.
+#
+# This is the pre-built baseline the organizers ship. ABIDES itself is NOT vendored
+# in this repo; it is fetched at build time at the pinned commit (see README.md) and
+# the `abides_fork` adapter (this directory) layers the canonical `simulate` verb on
+# top of the unmodified engine.
+#
+# Build context is this directory (baselines/). Build for the evaluation platform:
+#
+#   docker build --platform=linux/amd64 -t track3-abides-baseline:latest baselines/
+#
+# The evaluation harness (regression_suite/run_regression.py) runs it, network
+# disabled, exactly as a participant submission would be run:
+#
+#   docker run --rm --network none \
+#       -v <in>:/input:ro -v <out>:/output \
+#       track3-abides-baseline:latest \
+#       simulate --config /input/scenario.json --out /output/trace.parquet
+# NOTE — deliberate exception to the org's Python 3.13 standard. Do NOT bump this.
+# ABIDES requires pandas 1.x, and the pinned stack below (numpy==1.26.4, pandas==1.5.3) publishes
+# no cp313 wheels; this is also the exact stack that generated the frozen reference traces. The
+# image is self-contained (the harness only reads the parquet it writes), so it does not constrain
+# the 3.13 evaluation container or participant submission images.
+# ---- stage 1: compile the native engine and the no-Python launcher ----
+# -ffp-contract=off is required for bit-exactness. The launcher is a static binary with its own
+# Parquet writer and SHA-256, so nothing has to be loaded at start-up.
+FROM --platform=linux/amd64 python:3.11-slim AS native-build
+RUN apt-get update && apt-get install -y --no-install-recommends g++ && rm -rf /var/lib/apt/lists/*
+COPY native/ /src/native/
+RUN mkdir -p /out     && g++ -O2 -std=c++17 -ffp-contract=off -fPIC -shared -pthread         -o /out/libt3engine.so /src/native/engine/engine.cpp     && echo engine-library-built
+# The launcher is built with profile feedback: an instrumented build runs the training scenarios
+# (native/engine/pgo_train), then the real build uses the counts for inlining and code layout.
+# Floating-point semantics are unchanged (-ffp-contract=off, no -ffast-math); T3_PGO=0 skips it.
+ARG T3_PGO=1
+RUN cd /src/native/engine && F="-std=c++17 -ffp-contract=off -pthread" \
+    && if [ "$T3_PGO" = "1" ]; then \
+         g++ -O3 $F -fprofile-generate -fprofile-update=atomic -DT3_PGO_GEN -c launcher.cpp -o launcher.o \
+         && g++ -O3 $F -fprofile-generate -static launcher.o -o /tmp/t3gen \
+         && for f in pgo_train/flat/*.json pgo_train/t3-gb-*/scenario.json; do \
+              rm -rf /tmp/pgo_out; /tmp/t3gen simulate --config "$f" --out /tmp/pgo_out/trace.parquet > /dev/null || exit 1; \
+            done \
+         && ls -la launcher.gcda \
+         && g++ -O3 $F -fprofile-use -fprofile-partial-training -fprofile-correction -Wno-missing-profile -c launcher.cpp -o launcher.o \
+         && g++ -O3 $F -static launcher.o -o /out/t3launch; \
+       else \
+         g++ -O2 $F -static launcher.cpp -o /out/t3launch; \
+       fi
+
+# ---- stage 2: runtime (reference ABIDES stack = exact fallback path) ----
+FROM --platform=linux/amd64 python:3.11-slim
+
+# Required on every submission image by the published contract (SUBMISSION_CLI.md and the
+# CodaBench Submission Format page). The reference baseline satisfies the same rule it asks
+# participants to follow.
+LABEL qfbench2.interface_version="2.0"
+
+# ABIDES is pinned to the canonical Track 3 baseline commit (see baselines/README.md).
+# Override at build time only to test a different upstream pin.
+ARG ABIDES_REPO=https://github.com/jpmorganchase/abides-jpmc-public.git
+ARG ABIDES_COMMIT=f9cbe51342b7dedd9587e4e069040d68a5c6477f
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/opt
+
+# Pin the exact stack that generated the reference traces. ABIDES needs pandas 1.x;
+# the eval container's pandas 2.x is irrelevant because this image is self-contained
+# and the harness only *reads* the parquet it writes. coloredlogs is a runtime import
+# of abides_core.abides (it is NOT declared in ABIDES's setup.cfg, so the --no-deps
+# install below will not pull it — it must be installed explicitly here).
+RUN pip install \
+        numpy==1.26.4 \
+        pandas==1.5.3 \
+        scipy==1.17.1 \
+        pyarrow==15.0.2 \
+        coloredlogs==15.0.1
+
+# Fetch ABIDES at the pinned commit and apply our build-time overlays from patches/ to a
+# FRESH upstream clone (upstream repo untouched; nothing modified is committed anywhere):
+#   1. order_size_model.pomegranate-free.patch — drop the unbuildable pomegranate dependency
+#      (drop-in NumPy mixture sampler).
+#   2. kernel_message_ledger.patch — observation-only instrumentation that surfaces per-message
+#      send/recv/latency/causal_parent/seq metadata in end_state for the v2 enriched trace
+#      schema. Zero extra RNG; no simulation-logic, ordering, or RNG change.
+#   3. exchange_protocol_stp.patch — adds an OPT-IN self-trade-prevention policy to the exchange
+#      (ExchangeAgent.stp_policy, default None = legacy behavior; OrderBook honors cancel_newest /
+#      cancel_oldest). Inert unless a scenario opts in, so all existing references are unchanged.
+#   4. oracle_scheduled_jump.patch — adds an OPT-IN deterministic fundamental jump (reactive-agent
+#      intervention) to SparseMeanRevertingOracle. RNG-neutral; absent -> legacy, refs unchanged.
+# git is installed and removed inside one layer so it does not bloat the image.
+COPY patches/ /tmp/patches/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && git clone "${ABIDES_REPO}" /tmp/abides \
+    && git -C /tmp/abides checkout "${ABIDES_COMMIT}" \
+    && git -C /tmp/abides apply /tmp/patches/order_size_model.pomegranate-free.patch \
+    && git -C /tmp/abides apply /tmp/patches/kernel_message_ledger.patch \
+    && git -C /tmp/abides apply /tmp/patches/exchange_protocol_stp.patch \
+    && git -C /tmp/abides apply /tmp/patches/oracle_scheduled_jump.patch \
+    && pip install --no-deps /tmp/abides/abides-core /tmp/abides/abides-markets \
+    && apt-get purge -y git \
+    && apt-get autoremove -y \
+    && rm -rf /tmp/abides /tmp/patches /var/lib/apt/lists/*
+
+# The Track 3 `simulate` adapter (component-1 classical baseline) and its CLI shims. `simulate` is the
+# single-scenario verb; `simulate-batch` is the batched multi-scenario verb (BatchMarketSim / family GB):
+# it runs N sub-scenarios in one process and writes one output subdir each + batch_events.json.
+# Perf overlay: guard eager logger.debug string construction (debug logging is off at runtime).
+COPY perf/ /tmp/perf/
+RUN python /tmp/perf/lazy_debug.py         /usr/local/lib/python3.11/site-packages/abides_core         /usr/local/lib/python3.11/site-packages/abides_markets     && python /tmp/perf/heap_queue.py /usr/local/lib/python3.11/site-packages/abides_core/kernel.py     && rm -rf /tmp/perf
+
+COPY abides_fork /opt/abides_fork
+COPY t3native /opt/t3native
+COPY --from=native-build /out/libt3engine.so /opt/t3native/libt3engine.so
+# Precompile bytecode: PYTHONDONTWRITEBYTECODE=1 would otherwise recompile /opt sources every run.
+RUN python -m compileall -q /opt/t3native /opt/abides_fork
+# Both verbs are the native launcher (it decides by its own name). It hands over to the Python
+# entry points (python -m t3native.cli / t3native.batch) for anything it is not certain about.
+COPY --from=native-build /out/t3launch /usr/local/bin/simulate
+RUN cp /usr/local/bin/simulate /usr/local/bin/simulate-batch     && chmod +x /usr/local/bin/simulate /usr/local/bin/simulate-batch
+
+# T3_TRAIL=1: each output file has a writer thread that encodes and writes finished rows while the
+# simulation runs (launcher.cpp). The files hold the same tables as with T3_TRAIL=0; their row
+# groups are smaller, so the bytes differ.
+ARG T3_TRAIL=0
+ENV T3_TRAIL=${T3_TRAIL}
+
+WORKDIR /work
+# No ENTRYPOINT: the harness passes `simulate --config ... --out ...` as the command.
+CMD ["simulate", "--help"]

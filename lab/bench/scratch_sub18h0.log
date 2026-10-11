@@ -1,0 +1,4 @@
+binary identical to sub18: yes
+batch units bad: 0
+official rc=0 {'candidate_image': 'agenthon-track3:sub18h0', 'total_scenarios': 65, 'passed': 65, 'failed': 0, 'errored': 0}
+units checked 6, bad 0

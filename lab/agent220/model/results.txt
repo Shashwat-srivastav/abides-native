@@ -1,0 +1,236 @@
+== TASK 1: T_u = c + k*p_u ==
+laptop totals (ms, sum of 71 units; measured) and host score (given)
+build          ms    whole      sim      out     score
+sub9         1838     2060     1012      597    183420
+sub10        1736     1957      983      555    188687
+sub11m       1982     2320     1351      594    189018
+sub13m       1759     2078     1177      550    184047
+sub16m       1895     2333     1395      462    203394
+sub17t       1348     1598     1200      101    199285
+sub17n       1627     2035     1184      410   pending
+laptop repeat of one binary: sub17t 1348 vs sub17t_b 1311 ms (-2.7%); earlier round trail1 1526 (13.2%)
+
+zero-process ceiling = 108853 / c  (exact): c=0.300 -> 362844, c=0.360 -> 302370, c=0.400 -> 272133, c=0.440 -> 247393, c=0.471 -> 231111
+
+(1a) k each build needs, alone, to reproduce its score (FITTED exactly per build; c ASSUMED).
+     If the model held, every row would show one k.
+c          sub9    sub10   sub11m   sub13m   sub16m   sub17t   max/min
+0.300     5.729    5.637    4.963    5.908    4.213    6.117   1.45
+0.360     3.940    3.865    3.381    4.134    2.795    4.071   1.48
+0.400     2.968    2.888    2.510    3.149    2.001    2.946   1.57
+0.440     2.147    2.052    1.768    2.299    1.310    1.978   1.75
+0.471     1.600    1.489    1.271    1.721    0.836    1.321   2.06
+
+(1b) implied host process time per unit, ms, mean over 71 units = k_b * mean(p)  (FITTED given c)
+c          sub9    sub10   sub11m   sub13m   sub16m   sub17t
+0.300     148.3    137.8    138.5    146.3    112.5    116.1
+0.360     102.0     94.5     94.4    102.4     74.6     77.3
+0.400      76.8     70.6     70.1     78.0     53.4     55.9
+0.440      55.6     50.2     49.4     56.9     35.0     37.6
+0.471      41.4     36.4     35.5     42.6     22.3     25.1
+
+(1c) one (c,k) for all six builds, least squares on relative score error
+  p=ms    c in [0.30,0.471]: c=0.471 k=1.375 (FITTED)  rms 3.23%  max |res| 6.29%
+     build          sub9    sub10   sub11m   sub13m   sub16m   sub17t
+     actual       183420   188687   189018   184047   203394   199285
+     predicted    188031   191001   186725   190829   190593   198291
+     resid %       +2.51    +1.23    -1.21    +3.68    -6.29    -0.50
+     actual rank    sub16m > sub17t > sub11m > sub10 > sub13m > sub9
+     predicted rank sub17t > sub10 > sub13m > sub16m > sub9 > sub11m
+  p=ms    c free: c=0.476 k=1.300 (FITTED)  rms 3.23%  max |res| 6.27%
+     build          sub9    sub10   sub11m   sub13m   sub16m   sub17t
+     actual       183420   188687   189018   184047   203394   199285
+     predicted    188107   190980   186837   190826   190635   197982
+     resid %       +2.56    +1.22    -1.15    +3.68    -6.27    -0.65
+     actual rank    sub16m > sub17t > sub11m > sub10 > sub13m > sub9
+     predicted rank sub17t > sub10 > sub13m > sub16m > sub9 > sub11m
+  p=whole c in [0.30,0.471]: c=0.471 k=1.246 (FITTED)  rms 3.32%  max |res| 6.45%
+     build          sub9    sub10   sub11m   sub13m   sub16m   sub17t
+     actual       183420   188687   189018   184047   203394   199285
+     predicted    188644   191860   186506   190237   190282   197994
+     resid %       +2.85    +1.68    -1.33    +3.36    -6.45    -0.65
+     actual rank    sub16m > sub17t > sub11m > sub10 > sub13m > sub9
+     predicted rank sub17t > sub10 > sub16m > sub13m > sub9 > sub11m
+  p=whole c free: c=0.483 k=1.077 (FITTED)  rms 3.31%  max |res| 6.38%
+     build          sub9    sub10   sub11m   sub13m   sub16m   sub17t
+     actual       183420   188687   189018   184047   203394   199285
+     predicted    188769   191711   186833   190295   190425   197216
+     resid %       +2.92    +1.60    -1.16    +3.39    -6.38    -1.04
+     actual rank    sub16m > sub17t > sub11m > sub10 > sub13m > sub9
+     predicted rank sub17t > sub10 > sub16m > sub13m > sub9 > sub11m
+
+(1d) pairwise: the laptop change against the host change (given), and the largest host change any
+     c>=0.30 could produce from that laptop change with the earlier build's own k (bound, FITTED)
+  sub9    -> sub10   laptop   -5.6%  host  +2.9%  model predicts  +2.3% (c=0.30) ..  +1.7% (c=0.471)
+  sub10   -> sub11m  laptop  +14.2%  host  +0.2%  model predicts  -4.4% (c=0.30) ..  -2.3% (c=0.471)
+  sub11m  -> sub13m  laptop  -11.3%  host  -2.6%  model predicts  +3.7% (c=0.30) ..  +2.1% (c=0.471)
+  sub11m  -> sub16m  laptop   -4.4%  host  +7.6%  model predicts  +1.4% (c=0.30) ..  +2.0% (c=0.471)
+  sub16m  -> sub17t  laptop  -28.9%  host  -2.0%  model predicts +10.5% (c=0.30) ..  +2.8% (c=0.471)
+
+== TASK 2: extended models ==
+(2a) anchored pairs. k is FITTED exactly on the earlier build of the pair (c ASSUMED), applied to the
+     later build's laptop ms; the penalty is whatever is then needed to hit the later build's score.
+     Pair A = sub11m -> sub13m (streaming after the run, 65,536-row groups).
+     Pair B = sub16m -> sub17t (streaming during the run, 4,096-row groups; also contains sub17n's changes).
+c      | fixed ms/unit  A    B   | ms per 100K rows A    B | ms per row group A    B
+0.360  |       32.1       48.6  |       16.6       21.4  |       5.82      0.626
+0.400  |       31.3       41.1  |       13.9       15.7  |       5.28      0.478
+0.440  |       29.9       33.0  |       11.5       11.0  |       4.68      0.349
+0.471  |       28.2       26.4  |        9.8        7.9  |       4.17      0.259
+     A form is consistent when A and B agree. Fixed and per-row agree within 7-50% (best at high c);
+     per-row-group disagrees 9-16x (sub17t writes about 12x more groups for a similar total penalty).
+
+(2b) the same pairs read as a multiplier on host process time instead (FITTED; c ASSUMED):
+     ratio = [k needed by later build] / [k of earlier build]; 1.00 means the laptop ratio transfers.
+c            sub9>sub10     sub10>sub11m    sub11m>sub13m    sub13m>sub16m    sub11m>sub16m    sub16m>sub17t
+0.360              0.98             0.87             1.22             0.68             0.83             1.46
+0.400              0.97             0.87             1.25             0.64             0.80             1.47
+0.440              0.96             0.86             1.30             0.57             0.74             1.51
+0.471              0.93             0.85             1.35             0.49             0.66             1.58
+
+(2c) joint fits to six scores. rms and max are relative score errors in %. 'free' = 6 - fitted - 1 (c).
+     Upload noise is stated as ~0.1%; a model 'fits' only if its residuals are of that order.
+  M0  k
+    c=0.360  k=3.67                                       rms  3.84  max  7.51  free 4 |  +2.0  +1.5  -2.4  +3.5  -7.5  +2.8
+    c=0.400  k=2.73                                       rms  3.51  max  6.92  free 4 |  +2.1  +1.4  -2.0  +3.6  -6.9  +1.7
+    c=0.440  k=1.92                                       rms  3.30  max  6.50  free 4 |  +2.3  +1.3  -1.6  +3.7  -6.5  +0.5
+    c=0.471  k=1.37                                       rms  3.23  max  6.29  free 4 |  +2.5  +1.2  -1.2  +3.7  -6.3  -0.5
+  M1  k, q (out vs sim)
+    c=0.360  k=3.62 q=1.06                                rms  3.84  max  7.44  free 3 |  +1.9  +1.4  -2.5  +3.5  -7.4  +3.1
+    c=0.400  k=2.53 q=1.32                                rms  3.46  max  6.59  free 3 |  +1.6  +1.0  -2.3  +3.4  -6.6  +2.9
+    c=0.440  k=1.6 q=1.83                                 rms  3.11  max  5.80  free 3 |  +1.4  +0.6  -2.0  +3.2  -5.8  +2.7
+    c=0.471  k=0.97 q=2.75                                rms  2.85  max  5.22  free 3 |  +1.3  +0.2  -1.8  +3.1  -5.2  +2.6
+  M2  k, d (stream, fixed/unit)
+    c=0.360  k=3.48 d=24.4                                rms  3.15  max  6.01  free 3 |  +3.6  +3.0  -0.8  +0.6  -6.0  -0.5
+    c=0.400  k=2.59 d=20.9                                rms  2.99  max  5.69  free 3 |  +3.4  +2.6  -0.7  +1.1  -5.7  -1.1
+    c=0.440  k=1.82 d=16.8                                rms  2.97  max  5.57  free 3 |  +3.3  +2.3  -0.6  +1.7  -5.6  -1.7
+    c=0.471  k=1.31 d=13                                  rms  3.04  max  5.61  free 3 |  +3.3  +1.9  -0.5  +2.1  -5.6  -2.2
+  M3  k, r (stream, per 100K rows)
+    c=0.360  k=3.49 r=11.7                                rms  3.16  max  6.03  free 3 |  +3.6  +3.0  -0.9  +0.8  -6.0  -0.7
+    c=0.400  k=2.59 r=8.65                                rms  3.02  max  5.72  free 3 |  +3.4  +2.6  -0.8  +1.3  -5.7  -1.2
+    c=0.440  k=1.83 r=5.96                                rms  2.99  max  5.60  free 3 |  +3.3  +2.2  -0.6  +1.9  -5.6  -1.7
+    c=0.471  k=1.31 r=4.1                                 rms  3.06  max  5.64  free 3 |  +3.2  +1.9  -0.5  +2.3  -5.6  -2.2
+  M4  k, g (stream, per row group)
+    c=0.360  k=3.6 g=0.253                                rms  3.60  max  6.91  free 3 |  +2.7  +2.1  -1.8  +3.9  -6.9  -0.3
+    c=0.400  k=2.68 g=0.15                                rms  3.41  max  6.55  free 3 |  +2.5  +1.8  -1.6  +3.8  -6.6  -0.3
+    c=0.440  k=1.9 g=0.0546                               rms  3.28  max  6.36  free 3 |  +2.4  +1.4  -1.4  +3.8  -6.4  -0.3
+    c=0.471  k=1.38 g=-0.0162                             rms  3.23  max  6.33  free 3 |  +2.5  +1.2  -1.3  +3.7  -6.3  -0.3
+  M5  k, tau (per thread)
+    c=0.360  k=3.45 tau=1.69                              rms  3.80  max  6.96  free 3 |  +1.5  +0.9  -2.8  +4.0  -7.0  +3.3
+    c=0.400  k=2.48 tau=2.16                              rms  3.45  max  6.27  free 3 |  +1.5  +0.7  -2.5  +4.2  -6.3  +2.4
+    c=0.440  k=1.63 tau=2.96                              rms  3.20  max  5.67  free 3 |  +1.5  +0.4  -2.2  +4.5  -5.7  +1.3
+    c=0.471  k=1.04 tau=3.88                              rms  3.08  max  5.28  free 3 |  +1.6  +0.1  -2.0  +4.7  -5.3  +0.5
+  M6  k, m (laptop memory mode)
+    c=0.360  k=3.56 m=1.1                                 rms  3.63  max  6.62  free 3 |  +0.3  -0.3  -1.5  +4.5  -6.6  +3.6
+    c=0.400  k=2.63 m=1.12                                rms  3.29  max  6.03  free 3 |  +0.3  -0.3  -1.1  +4.6  -6.0  +2.5
+    c=0.440  k=1.82 m=1.15                                rms  3.04  max  5.57  free 3 |  +0.4  -0.5  -0.6  +4.7  -5.6  +1.3
+    c=0.471  k=1.28 m=1.21                                rms  2.93  max  5.31  free 3 |  +0.6  -0.6  -0.1  +4.8  -5.3  +0.4
+  M7  k, e (new engine factor)
+    c=0.360  k=3.83 e=0.875                               rms  3.42  max  5.22  free 3 |  +0.9  +0.3  -3.6  +2.3  -4.9  +5.2
+    c=0.400  k=2.87 e=0.835                               rms  2.94  max  4.37  free 3 |  +0.8  +0.1  -3.3  +2.3  -4.0  +4.4
+    c=0.440  k=2.06 e=0.768                               rms  2.47  max  3.52  free 3 |  +0.8  -0.1  -3.0  +2.2  -3.1  +3.5
+    c=0.471  k=1.52 e=0.68                                rms  2.13  max  2.84  free 3 |  +0.9  -0.3  -2.8  +2.1  -2.4  +2.8
+  M8  k, e, d
+    c=0.360  k=3.64 e=0.812 d=32.3                        rms  1.93  max  2.30  free 2 |  +2.3  +1.7  -2.1  -2.0  -1.5  +1.8
+    c=0.400  k=2.73 e=0.771 d=28.9                        rms  1.60  max  2.07  free 2 |  +2.1  +1.3  -2.0  -1.5  -1.1  +1.3
+    c=0.440  k=1.95 e=0.701 d=24.9                        rms  1.33  max  1.94  free 2 |  +1.9  +0.9  -1.9  -1.0  -0.7  +0.9
+    c=0.471  k=1.43 e=0.607 d=21.4                        rms  1.16  max  1.88  free 2 |  +1.8  +0.6  -1.9  -0.6  -0.4  +0.6
+  M9  k, e, r
+    c=0.360  k=3.65 e=0.795 r=16.2                        rms  1.76  max  2.23  free 2 |  +2.2  +1.6  -2.2  -1.8  -1.0  +1.4
+    c=0.400  k=2.74 e=0.755 r=12.4                        rms  1.47  max  2.12  free 2 |  +2.0  +1.3  -2.1  -1.3  -0.7  +1.0
+    c=0.440  k=1.96 e=0.687 r=9.2                         rms  1.25  max  2.02  free 2 |  +1.8  +0.9  -2.0  -0.8  -0.4  +0.6
+    c=0.471  k=1.44 e=0.594 r=7.05                        rms  1.12  max  1.94  free 2 |  +1.8  +0.5  -1.9  -0.4  -0.2  +0.3
+  M10 k, e, g
+    c=0.360  k=3.8 e=0.732 g=0.641                        rms  1.65  max  3.39  free 2 |  +1.0  +0.5  -3.4  +1.9  +0.1  -0.1
+    c=0.400  k=2.86 e=0.697 g=0.492                       rms  1.56  max  3.14  free 2 |  +0.9  +0.2  -3.1  +1.9  +0.1  -0.1
+    c=0.440  k=2.05 e=0.635 g=0.361                       rms  1.48  max  2.90  free 2 |  +0.9  +0.0  -2.9  +1.9  +0.1  -0.1
+    c=0.471  k=1.51 e=0.55 g=0.27                         rms  1.41  max  2.70  free 2 |  +1.0  -0.2  -2.7  +1.9  +0.1  -0.1
+  M11 k, e, tau
+    c=0.360  k=4.64 e=0.815 tau=-4.84                     rms  3.24  max  5.11  free 2 |  +1.7  +1.2  -3.1  +0.2  -4.8  +5.1
+    c=0.400  k=3.74 e=0.768 tau=-6.02                     rms  2.71  max  4.23  free 2 |  +1.7  +1.2  -2.7  -0.1  -3.8  +4.2
+    c=0.440  k=4.08 e=0.694 tau=-23.6                     rms  1.95  max  2.77  free 2 |  +1.5  +1.4  -1.7  -1.1  -2.6  +2.8
+    c=0.471  k=3.01 e=0.645 tau=-20.9                     rms  1.65  max  2.38  free 2 |  +1.4  +1.0  -1.6  -0.8  -2.1  +2.4
+  M12 k, m, d
+    c=0.360  k=3.09 m=1.26 d=40.8                         rms  1.59  max  2.72  free 2 |  +0.3  -0.3  +2.5  +0.8  -2.7  -0.8
+    c=0.400  k=2.27 m=1.29 d=36.3                         rms  1.68  max  2.71  free 2 |  +0.3  -0.3  +2.4  +1.3  -2.7  -1.3
+    c=0.440  k=1.56 m=1.35 d=31.2                         rms  1.88  max  2.84  free 2 |  +0.4  -0.5  +2.3  +1.9  -2.8  -1.9
+    c=0.471  k=1.08 m=1.43 d=26.6                         rms  2.12  max  3.07  free 2 |  +0.6  -0.6  +2.3  +2.4  -3.1  -2.4
+  M13 k, q, e
+    c=0.360  k=7.42 q=-0.583 e=0.585                      rms  2.20  max  4.44  free 2 |  +2.1  +0.7  -4.4  +1.6  -1.0  +0.9
+    c=0.400  k=5.6 q=-0.629 e=0.553                       rms  2.04  max  4.05  free 2 |  +2.0  +0.5  -4.1  +1.4  -1.0  +1.0
+    c=0.440  k=3.93 q=-0.63 e=0.515                       rms  1.92  max  3.69  free 2 |  +1.9  +0.3  -3.7  +1.4  -1.2  +1.1
+    c=0.471  k=2.75 q=-0.565 e=0.472                      rms  1.81  max  3.35  free 2 |  +1.8  +0.1  -3.4  +1.5  -1.2  +1.2
+  M14 k, m, e, d (5 with c)
+    c=0.360  k=3.29 m=1.19 e=0.871 d=41.4                 rms  0.66  max  0.88  free 1 |  +0.3  -0.3  +0.8  -0.9  -0.7  +0.8
+    c=0.400  k=2.46 m=1.19 e=0.827 d=36.8                 rms  0.42  max  0.51  free 1 |  +0.3  -0.3  +0.5  -0.5  -0.4  +0.5
+    c=0.440  k=1.75 m=1.2 e=0.752 d=31.7                  rms  0.29  max  0.46  free 1 |  +0.4  -0.5  +0.1  -0.2  -0.1  +0.2
+    c=0.471  k=1.28 m=1.21 e=0.65 d=27.2                  rms  0.35  max  0.60  free 1 |  +0.6  -0.6  -0.1  +0.1  +0.1  -0.1
+  M15 k, m, e, r (5 with c)
+    c=0.360  k=3.32 m=1.17 e=0.852 r=19.6                 rms  0.43  max  0.59  free 1 |  +0.3  -0.3  +0.5  -0.6  -0.3  +0.5
+    c=0.400  k=2.49 m=1.18 e=0.809 r=15                   rms  0.25  max  0.34  free 1 |  +0.3  -0.3  +0.2  -0.2  -0.1  +0.2
+    c=0.440  k=1.77 m=1.18 e=0.736 r=11.2                 rms  0.27  max  0.46  free 1 |  +0.4  -0.5  -0.1  +0.1  +0.0  -0.1
+    c=0.471  k=1.29 m=1.2 e=0.636 r=8.63                  rms  0.40  max  0.60  free 1 |  +0.6  -0.6  -0.3  +0.3  +0.2  -0.3
+    (residual columns: sub9 sub10 sub11m sub13m sub16m sub17t)
+
+== TASK 3: predicted scores (thousands). Every cell = FITTED model at an ASSUMED c ==
+   Base is sub17n's laptop file (sum 1627 ms: sim 1184, out 410; batch units split 75/25, ASSUMED).
+   '(d)' subtracts host milliseconds, not laptop milliseconds.
+direction  (columns: c=0.36 0.40 0.44 0.471) | A  fixed/unit stream cost   | B  per-row stream cost      | A16 anchored on sub16m      | C  no stream cost          
+(a) sub17n as built                  |  208.0  206.7  205.7  205.1 |  208.6  207.2  206.0  205.3 |  209.3  207.4  205.9  205.0 |  189.3  190.8  192.4  194.0
+(b) sim -10%                         |  212.1  210.0  208.1  206.8 |  212.7  210.5  208.4  207.0 |  213.4  210.7  208.4  206.7 |  193.7  194.4  195.3  196.2
+(b) sim -20%                         |  216.5  213.5  210.7  208.6 |  217.1  214.0  211.0  208.8 |  217.8  214.2  210.9  208.5 |  198.3  198.3  198.4  198.5
+(b) sim -30%                         |  221.3  217.3  213.4  210.4 |  221.9  217.7  213.7  210.6 |  222.5  217.9  213.6  210.3 |  203.4  202.5  201.6  201.0
+(b) sim -50%                         |  232.1  225.6  219.2  214.3 |  232.7  226.0  219.5  214.4 |  233.2  226.2  219.4  214.2 |  215.2  212.0  208.8  206.2
+(c) out -> 0, writer not streaming   |  219.9  215.5  211.7  209.0 |  220.5  215.9  212.0  209.2 |  221.1  216.1  211.9  208.9 |  202.9  201.2  199.9  199.4
+(d) -1 ms host per unit              |  208.5  207.1  206.1  205.5 |  209.1  207.6  206.4  205.7 |  209.7  207.9  206.3  205.4 |  189.7  191.1  192.8  194.4
+(d) -3 ms host per unit              |  209.3  208.0  206.9  206.3 |  210.0  208.4  207.2  206.5 |  210.6  208.7  207.1  206.1 |  190.5  191.9  193.5  195.1
+(d) -5 ms host per unit              |  210.2  208.8  207.7  207.1 |  210.8  209.3  208.0  207.3 |  211.5  209.5  207.9  206.9 |  191.2  192.6  194.2  195.8
+(b+c) sim -30%, out -> 0             |  235.5  227.5  220.1  214.7 |  236.0  227.8  220.3  214.8 |  236.5  228.0  220.3  214.6 |  219.9  214.8  210.3  207.0
+
+   host ms per laptop ms used above (FITTED): A: 2.86 2.04 1.32 0.83; B: 2.83 2.01 1.31 0.82; A16: 2.80 2.00 1.31 0.84; C: 4.07 2.95 1.98 1.32
+   streaming penalty (FITTED): A d = 41.4 36.8 31.7 27.2 ms/unit; B r = 19.6 15.0 11.2 8.6 ms per 100K rows
+   laptop caveat: a second laptop round of one binary moved the sum by 3-13%; a 10% error in sub17n's
+   laptop total moves row (a), A16, to 204.4..214.6 203.5..211.6 203.0..209.0 202.9..207.1
+
+   streaming builds under A and B (penalty kept): sub17t refit check and sub18t prediction
+   sub17t   | A:  200.9  200.2  199.6  199.1 | B:  200.2  199.7  199.2  198.8   (actual 199.3)
+   sub18t   | A:  202.7  201.5  200.4  199.6 | B:  202.1  200.9  199.9  199.3
+
+== TASK 4: what would discriminate ==
+(4a) sub17n (pending). Predicted (thousands): A 208.0..205.1; B 208.6..205.3; A16 209.3..205.0; C 189.3..194.0
+     Streaming-penalty models put it above sub16m (203.4); model C puts it below sub17t (199.3).
+(4b) calibration upload: sub16m (or the best build) plus a fixed sleep in every unit. Predicted score
+     (thousands) with k FITTED on sub16m at each ASSUMED c:
+     + 25 ms: c=0.360: 193.6  c=0.400: 193.9  c=0.440: 194.1  c=0.471: 194.2
+     + 50 ms: c=0.360: 184.7  c=0.400: 185.2  c=0.440: 185.6  c=0.471: 185.8
+     +100 ms: c=0.360: 169.3  c=0.400: 170.1  c=0.440: 170.8  c=0.471: 171.1
+     Spread across c is only ~0.3%: a fixed sleep measures the slope (about -0.4K per ms) but not c.
+(4b') calibration upload that does identify c: the same build doing its process work twice
+     (simulate twice, write once => roughly +sim; or everything twice => 2x). Predicted (thousands):
+     sim twice (+sim): c=0.360: 171.0  c=0.400: 176.3  c=0.440: 182.3  c=0.471: 187.8
+     all twice (2x)  : c=0.360: 163.5  c=0.400: 170.3  c=0.440: 177.8  c=0.471: 184.6
+     Upload noise of 0.1% is about 0.2K, so this separates c to roughly +-0.005 s.
+(4c) per-unit host times of any one build: regress T_u on p_u over 71 units; the intercept is c.
+
+== TASK 5: process-time reduction needed ==
+(5a) from sub16m as scored (203,394): uniform cut of host process time, or equal ms per unit.
+     k FITTED exactly on sub16m; c ASSUMED; independent of the models above.
+c      ceiling   | 220K: cut%  ms/unit  left ms/unit  230K: cut%  ms/unit  left ms/unit
+0.360  302370    |  27.2%    38.7    54.3                 40.8%    69.5    44.2              
+0.400  272133    |  33.9%    44.2    35.3                 50.7%    89.3    26.3              
+0.440  247393    |  46.0%    56.3    18.9                 68.4%   110.6    11.1              
+0.471  231111    |  65.3%    69.2     7.7                 96.8%   191.6     0.7              
+
+(5b) from sub17n as each model predicts it: further uniform cut of host process time (%).
+c      | A   220K   230K  | B   220K   230K  | A16 220K   230K  | C   220K   230K 
+0.360  |      21.3   36.4  |      20.4   35.7  |      19.4   34.9  |      44.6   55.3 
+0.400  |      29.3   47.6  |      28.5   47.0  |      28.0   46.6  |      51.1   63.7 
+0.440  |      42.4   66.5  |      41.8   66.1  |      42.0   66.2  |      61.6   77.6 
+0.471  |      62.8   96.6  |      62.4   96.6  |      63.0   96.6  |      76.6   97.9 
+
+(5c) same, expressed as the laptop total (ms over 71 units) a non-streaming build must reach,
+     if host time stays proportional to laptop time inside the sub16 family (A16):
+     c=0.360  220K: 1380 ms  230K: 1122 ms   (sub16m 1895, sub17n 1627, sub17t 1348, sub18t 1264)
+     c=0.400  220K: 1252 ms  230K: 934 ms   (sub16m 1895, sub17n 1627, sub17t 1348, sub18t 1264)
+     c=0.440  220K: 1024 ms  230K: 599 ms   (sub16m 1895, sub17n 1627, sub17t 1348, sub18t 1264)
+     c=0.471  220K: 658 ms  230K: 61 ms   (sub16m 1895, sub17n 1627, sub17t 1348, sub18t 1264)

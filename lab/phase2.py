@@ -1,0 +1,11 @@
+import time; T = time.perf_counter
+t = T(); import numpy as np; print(f"numpy {T()-t:.3f}")
+t = T(); import pyarrow as pa; print(f"pyarrow {T()-t:.3f}")
+t = T(); import pyarrow.parquet as pq; print(f"pyarrow.parquet {T()-t:.3f}")
+t = T(); from t3native import native_sim, writer; print(f"t3native {T()-t:.3f}")
+t = T(); native_sim._load(); print(f"dlopen engine {T()-t:.3f}")
+t = T(); a = pa.array(["A", "B"], type=pa.string()).take(pa.array(np.zeros(10, np.int32))); print(f"first take {T()-t:.3f}")
+t = T(); a2 = pa.array(np.zeros(10, np.int64), type=pa.int64(), mask=np.zeros(10, bool)); print(f"first masked array {T()-t:.3f}")
+tb = pa.table({"x": pa.array(np.arange(10))})
+t = T(); pq.write_table(tb, "/tmp/x.parquet", compression="snappy"); print(f"first write_table {T()-t:.3f}")
+t = T(); pq.write_table(tb, "/tmp/y.parquet", compression="snappy"); print(f"second write_table {T()-t:.3f}")

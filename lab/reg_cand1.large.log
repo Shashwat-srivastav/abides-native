@@ -1,0 +1,18 @@
+2026-09-27 10:43:50,210 INFO __main__: Discovered 4 scenario(s) under ..\lab\sc_large
+2026-09-27 10:45:12,758 INFO __main__: [PASS] ed69678c-450f-5f69-83a0-b4cf31101f75
+2026-09-27 10:46:33,662 INFO __main__: [PASS] 2c78b9d2-b4c6-5342-88a2-c6d4cc70d2f1
+2026-09-27 10:59:31,167 INFO __main__: [PASS] 9b855004-0d35-5ed1-945f-5d5d299b64d8
+2026-09-27 11:01:17,155 INFO __main__: [PASS] 5f8fe817-da1a-56cd-b7ff-754f135c0029
+2026-09-27 11:01:17,809 INFO __main__: Report written to E:\NeurIPS\agenthon\lab\reg_cand1\large\report.json
+
+Regression Report — candidate: agenthon-track3:cand1
+--------------------------------------------------------------------------------------------------------------
+scenario_id                                tier  semantic_pass  stylized_pass  events_per_sec   failure_labels
+--------------------------------------------------------------------------------------------------------------
+2c78b9d2-b4c6-5342-88a2-c6d4cc70d2f1       A     PASS           PASS           15,642           —
+5f8fe817-da1a-56cd-b7ff-754f135c0029       A     PASS           PASS           15,326           —
+9b855004-0d35-5ed1-945f-5d5d299b64d8       A     PASS           PASS           6,681            —
+ed69678c-450f-5f69-83a0-b4cf31101f75       A     PASS           PASS           15,313           —
+--------------------------------------------------------------------------------------------------------------
+Total: 4  Passed: 4  Failed: 0  Errored: 0
+

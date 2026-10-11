@@ -1,0 +1,42 @@
+{
+ "gb_mega_throughput": {
+  "n_events": 1168360,
+  "best_s": 0.5625453310000239
+ },
+ "gb_pop_horizon_scale": {
+  "n_events": 725591,
+  "best_s": 0.3240545909999355
+ },
+ "gb_horizon_240s": {
+  "n_events": 555032,
+  "best_s": 0.24794244099996376
+ },
+ "gb_highfreq_40hz_60s": {
+  "n_events": 500530,
+  "best_s": 0.3134503539999969
+ },
+ "mr_cancel_replace_churn": {
+  "n_events": 322007,
+  "best_s": 0.14036789100009628
+ },
+ "mr_deep_book_state_size": {
+  "n_events": 319488,
+  "best_s": 0.12622292800006107
+ },
+ "gb_pop_128_agents": {
+  "n_events": 303603,
+  "best_s": 0.1709895139999844
+ },
+ "mp05_cancel_churn_newest": {
+  "n_events": 240829,
+  "best_s": 0.09272535799993875
+ },
+ "mr_checkpoint_cadence_fine": {
+  "n_events": 161055,
+  "best_s": 0.07177113099999133
+ },
+ "st01_liquidity_churn_baseline": {
+  "n_events": 72034,
+  "best_s": 0.045096611999952074
+ }
+}

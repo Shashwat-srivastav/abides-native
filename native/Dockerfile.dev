@@ -1,0 +1,4 @@
+# Dev/toolchain image for the native engine: same Python/numpy stack as the reference + g++.
+FROM agenthon-track3:cand2
+RUN apt-get update && apt-get install -y --no-install-recommends g++ make && rm -rf /var/lib/apt/lists/*
+WORKDIR /native

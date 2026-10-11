@@ -1,0 +1,262 @@
+{
+ "as01_base_mix": {
+  "n_events": 24695,
+  "best_s": 0.0452964310002244
+ },
+ "as02_scale_up_noise": {
+  "n_events": 42231,
+  "best_s": 0.06356336500039106
+ },
+ "as03_mm_liquidity_heavy": {
+  "n_events": 50828,
+  "best_s": 0.043782159999864234
+ },
+ "as04_value_heavy": {
+  "n_events": 26990,
+  "best_s": 0.031101752999802557
+ },
+ "as05_oracle_variant": {
+  "n_events": 25443,
+  "best_s": 0.02498614699970858
+ },
+ "as06_throughput_fast": {
+  "n_events": 74502,
+  "best_s": 0.04271903900007601
+ },
+ "ca_baseline_calm": {
+  "n_events": 40257,
+  "best_s": 0.029932717999599845
+ },
+ "ca_fast_mean_reversion": {
+  "n_events": 40280,
+  "best_s": 0.02984232200014958
+ },
+ "ca_fat_tail_jumps": {
+  "n_events": 40283,
+  "best_s": 0.032457732999773725
+ },
+ "ca_high_volatility": {
+  "n_events": 40237,
+  "best_s": 0.030765506000079768
+ },
+ "ca_thin_book_depth": {
+  "n_events": 25746,
+  "best_s": 0.030132877999676566
+ },
+ "cancelmodify_lifecycle": {
+  "n_events": 161529,
+  "best_s": 0.07762855200007834
+ },
+ "coarse_tick_ties": {
+  "n_events": 72004,
+  "best_s": 0.03997361599977012
+ },
+ "eq001_pareto_latency_tail": {
+  "n_events": 16377,
+  "best_s": 0.0219521200001509
+ },
+ "eq_deterministic_baseline": {
+  "n_events": 10669,
+  "best_s": 0.024610895999558124
+ },
+ "eq_lognormal_highmag": {
+  "n_events": 14804,
+  "best_s": 0.022828792999916914
+ },
+ "eq_lognormal_highsigma": {
+  "n_events": 14820,
+  "best_s": 0.020737838000059128
+ },
+ "eq_lognormal_lowsigma": {
+  "n_events": 14379,
+  "best_s": 0.019038133000321977
+ },
+ "eq_pareto_heavytail": {
+  "n_events": 14790,
+  "best_s": 0.020663189999595488
+ },
+ "eq_uniform_tight": {
+  "n_events": 14704,
+  "best_s": 0.02254317799997807
+ },
+ "eq_uniform_wide": {
+  "n_events": 14947,
+  "best_s": 0.02529740199997832
+ },
+ "fastlob_core": {
+  "n_events": 72061,
+  "best_s": 0.04379577200006679
+ },
+ "fastlob_tight_book": {
+  "n_events": 72003,
+  "best_s": 0.040583408000202326
+ },
+ "gb_base_30agent_30s": {
+  "n_events": 68351,
+  "best_s": 0.05484652199993434
+ },
+ "gb_highfreq_40hz_60s": {
+  "n_events": 500530,
+  "best_s": 0.33724911899980725
+ },
+ "gb_horizon_240s": {
+  "n_events": 555032,
+  "best_s": 0.3255158370002391
+ },
+ "gb_mega_throughput": {
+  "n_events": 1168360,
+  "best_s": 0.6090456939996329
+ },
+ "gb_pop_128_agents": {
+  "n_events": 303603,
+  "best_s": 0.19677774199999476
+ },
+ "gb_pop_horizon_scale": {
+  "n_events": 725591,
+  "best_s": 0.3716436060003616
+ },
+ "momentum_mix_priority": {
+  "n_events": 71980,
+  "best_s": 0.04060824199996205
+ },
+ "mp01_stp_newest_baseline": {
+  "n_events": 72044,
+  "best_s": 0.04706610799985356
+ },
+ "mp02_stp_oldest_baseline": {
+  "n_events": 72049,
+  "best_s": 0.038736803000119835
+ },
+ "mp03_mm_heavy_newest": {
+  "n_events": 120920,
+  "best_s": 0.06211945899985949
+ },
+ "mp04_mm_heavy_oldest": {
+  "n_events": 120915,
+  "best_s": 0.05230066400008582
+ },
+ "mp05_cancel_churn_newest": {
+  "n_events": 240829,
+  "best_s": 0.09399273899998661
+ },
+ "mp06_tight_spread_selfcross": {
+  "n_events": 80929,
+  "best_s": 0.04623967499992432
+ },
+ "mp07_heavy_flow_oldest": {
+  "n_events": 72036,
+  "best_s": 0.04154640399974596
+ },
+ "mr_cancel_replace_churn": {
+  "n_events": 322007,
+  "best_s": 0.18259950699984984
+ },
+ "mr_checkpoint_cadence_fine": {
+  "n_events": 161055,
+  "best_s": 0.07416075999981331
+ },
+ "mr_deep_book_state_size": {
+  "n_events": 319488,
+  "best_s": 0.1373884250001538
+ },
+ "mr_long_horizon_replay": {
+  "n_events": 81221,
+  "best_s": 0.0525193510002282
+ },
+ "multilevel_crossing": {
+  "n_events": 72250,
+  "best_s": 0.05214189100024669
+ },
+ "partialfill_atomicity": {
+  "n_events": 72052,
+  "best_s": 0.05618712100022094
+ },
+ "ra01_fundamental_shock_mid": {
+  "n_events": 36431,
+  "best_s": 0.039441671000076894
+ },
+ "ra02_shock_early": {
+  "n_events": 35381,
+  "best_s": 0.03193573099997593
+ },
+ "ra03_large_shock": {
+  "n_events": 36330,
+  "best_s": 0.04808774499997526
+ },
+ "ra04_shock_late": {
+  "n_events": 34953,
+  "best_s": 0.05265320899979997
+ },
+ "ra05_shock_momentum_heavy": {
+  "n_events": 35697,
+  "best_s": 0.05175250100000994
+ },
+ "ra06_shock_value_heavy": {
+  "n_events": 35298,
+  "best_s": 0.035060503000295284
+ },
+ "s001_price_time_priority": {
+  "n_events": 604,
+  "best_s": 0.01474988400013899
+ },
+ "s012_partial_fill_cancel_race": {
+  "n_events": 202291,
+  "best_s": 0.11616823999975168
+ },
+ "s019_latency_jitter_kendall": {
+  "n_events": 12328,
+  "best_s": 0.021360547999847768
+ },
+ "sf_01_baseline_regime": {
+  "n_events": 71932,
+  "best_s": 0.05801750199998423
+ },
+ "sf_02_heavy_jump_tails": {
+  "n_events": 71966,
+  "best_s": 0.05779081099990435
+ },
+ "sf_03_vol_clustering_momentum": {
+  "n_events": 71827,
+  "best_s": 0.04074757399985174
+ },
+ "sf_04_thin_book_depth": {
+  "n_events": 72093,
+  "best_s": 0.044697675999941566
+ },
+ "sf_05_deep_book_liquidity": {
+  "n_events": 82591,
+  "best_s": 0.04676116200016622
+ },
+ "sf_06_high_fundamental_vol": {
+  "n_events": 71960,
+  "best_s": 0.046272583000245504
+ },
+ "sf_07_coarse_agent_batch": {
+  "n_events": 71935,
+  "best_s": 0.038559268999961205
+ },
+ "st01_liquidity_churn_baseline": {
+  "n_events": 72034,
+  "best_s": 0.042286651999802416
+ },
+ "st02_informed_entry_burst": {
+  "n_events": 72075,
+  "best_s": 0.04292377799993119
+ },
+ "st03_volatility_burst": {
+  "n_events": 72020,
+  "best_s": 0.04662328999984311
+ },
+ "st04_thin_book_mm_strain": {
+  "n_events": 36251,
+  "best_s": 0.026786673000060546
+ },
+ "st05_latency_spike_pareto": {
+  "n_events": 71980,
+  "best_s": 0.04718395700001565
+ },
+ "stp_cancel_newest": {
+  "n_events": 72048,
+  "best_s": 0.044331330000204616
+ }
+}

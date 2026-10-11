@@ -1,0 +1,14 @@
+# Line endings: scripts and sources are always LF; data files are stored byte for byte.
+*.sh text eol=lf
+*.py text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+Dockerfile* text eol=lf
+sub/simulate text eol=lf
+sub/simulate-batch text eol=lf
+*.json -text
+*.jsonl -text
+*.log -text
+*.txt -text
+*.png binary
+*.pdf binary

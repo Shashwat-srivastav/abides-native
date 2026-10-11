@@ -1,0 +1,26 @@
+{
+ "t3-gb-mega-throughput": {
+  "ms": 302.2,
+  "n_events": 1168360
+ },
+ "t3-gb-pop-horizon-scale": {
+  "ms": 183.3,
+  "n_events": 725591
+ },
+ "t3-gb-horizon-240s": {
+  "ms": 130.1,
+  "n_events": 555032
+ },
+ "t3-gb-highfreq-40hz-60s": {
+  "ms": 124.4,
+  "n_events": 500530
+ },
+ "t3-gb-pop-128-agents": {
+  "ms": 84.8,
+  "n_events": 303603
+ },
+ "t3-gb-base-30agent-30s": {
+  "ms": 27.5,
+  "n_events": 68351
+ }
+}

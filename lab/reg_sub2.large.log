@@ -1,0 +1,18 @@
+2026-10-01 10:44:23,603 INFO __main__: Discovered 4 scenario(s) under ..\lab\sc_large
+2026-10-01 10:44:34,106 INFO __main__: [PASS] ed69678c-450f-5f69-83a0-b4cf31101f75
+2026-10-01 10:44:42,919 INFO __main__: [PASS] 2c78b9d2-b4c6-5342-88a2-c6d4cc70d2f1
+2026-10-01 10:44:59,922 INFO __main__: [PASS] 9b855004-0d35-5ed1-945f-5d5d299b64d8
+2026-10-01 10:45:11,142 INFO __main__: [PASS] 5f8fe817-da1a-56cd-b7ff-754f135c0029
+2026-10-01 10:45:11,614 INFO __main__: Report written to ..\lab\reg_sub2\large\report.json
+
+Regression Report — candidate: agenthon-track3:sub2
+--------------------------------------------------------------------------------------------------------------
+scenario_id                                tier  semantic_pass  stylized_pass  events_per_sec   failure_labels
+--------------------------------------------------------------------------------------------------------------
+2c78b9d2-b4c6-5342-88a2-c6d4cc70d2f1       A     PASS           PASS           2,489,918        —
+5f8fe817-da1a-56cd-b7ff-754f135c0029       A     PASS           PASS           4,667,179        —
+9b855004-0d35-5ed1-945f-5d5d299b64d8       A     PASS           PASS           4,763,480        —
+ed69678c-450f-5f69-83a0-b4cf31101f75       A     PASS           PASS           5,083,382        —
+--------------------------------------------------------------------------------------------------------------
+Total: 4  Passed: 4  Failed: 0  Errored: 0
+

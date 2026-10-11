@@ -1,0 +1,130 @@
+{
+ "t3-gb-mega-throughput": {
+  "ms": 799.4,
+  "n_events": 1168360,
+  "minflt": 13820,
+  "maxrss_mb": 54,
+  "out_bytes": 8266654,
+  "ledger": false
+ },
+ "t3-gb-pop-horizon-scale": {
+  "ms": 323.0,
+  "n_events": 725591,
+  "minflt": 9321,
+  "maxrss_mb": 37,
+  "out_bytes": 5050373,
+  "ledger": false
+ },
+ "t3-gb-horizon-240s": {
+  "ms": 289.3,
+  "n_events": 555032,
+  "minflt": 7081,
+  "maxrss_mb": 28,
+  "out_bytes": 3998250,
+  "ledger": false
+ },
+ "t3-gb-highfreq-40hz-60s": {
+  "ms": 339.9,
+  "n_events": 500530,
+  "minflt": 6423,
+  "maxrss_mb": 26,
+  "out_bytes": 3426413,
+  "ledger": false
+ },
+ "t3-mr-cancel-replace-churn": {
+  "ms": 206.9,
+  "n_events": 322007,
+  "minflt": 8203,
+  "maxrss_mb": 32,
+  "out_bytes": 5263640,
+  "ledger": true
+ },
+ "t3-mr-deep-book-state-size": {
+  "ms": 239.0,
+  "n_events": 319488,
+  "minflt": 8043,
+  "maxrss_mb": 32,
+  "out_bytes": 4739466,
+  "ledger": true
+ },
+ "t3-gb-pop-128-agents": {
+  "ms": 179.7,
+  "n_events": 303603,
+  "minflt": 3979,
+  "maxrss_mb": 16,
+  "out_bytes": 2038006,
+  "ledger": false
+ },
+ "t3-mp05-cancel-churn-newest": {
+  "ms": 129.9,
+  "n_events": 240829,
+  "minflt": 6432,
+  "maxrss_mb": 25,
+  "out_bytes": 3880743,
+  "ledger": true
+ },
+ "t3-s012-partial-fill-cancel-race": {
+  "ms": 112.7,
+  "n_events": 202291,
+  "minflt": 5679,
+  "maxrss_mb": 23,
+  "out_bytes": 3343685,
+  "ledger": true
+ },
+ "t3-mr-checkpoint-cadence-fine": {
+  "ms": 97.4,
+  "n_events": 161055,
+  "minflt": 4694,
+  "maxrss_mb": 19,
+  "out_bytes": 2665444,
+  "ledger": true
+ },
+ "t3-cancelmodify-lifecycle": {
+  "ms": 102.6,
+  "n_events": 161529,
+  "minflt": 4768,
+  "maxrss_mb": 19,
+  "out_bytes": 2673062,
+  "ledger": true
+ },
+ "t3-mp04-mm-heavy-oldest": {
+  "ms": 75.4,
+  "n_events": 120915,
+  "minflt": 3574,
+  "maxrss_mb": 14,
+  "out_bytes": 2051397,
+  "ledger": true
+ },
+ "t3-st01-liquidity-churn-baseline": {
+  "ms": 52.8,
+  "n_events": 72034,
+  "minflt": 2202,
+  "maxrss_mb": 13,
+  "out_bytes": 1268185,
+  "ledger": true
+ },
+ "t3-as01-base-mix": {
+  "ms": 39.5,
+  "n_events": 24695,
+  "minflt": 949,
+  "maxrss_mb": 13,
+  "out_bytes": 475324,
+  "ledger": true
+ },
+ "t3-eq-deterministic-baseline": {
+  "ms": 22.8,
+  "n_events": 10669,
+  "minflt": 554,
+  "maxrss_mb": 13,
+  "out_bytes": 310708,
+  "ledger": true
+ },
+ "t3-ca-fat-tail-jumps": {
+  "ms": 42.4,
+  "n_events": 40283,
+  "minflt": 1346,
+  "maxrss_mb": 13,
+  "out_bytes": 726003,
+  "ledger": true
+ }
+}

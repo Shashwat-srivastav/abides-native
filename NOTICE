@@ -1,0 +1,25 @@
+A bit-exact native reimplementation of the ABIDES market simulator
+Copyright 2026 Shashwat
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party material
+--------------------
+
+sub/abides_fork/, sub/patches/ and parts of sub/Dockerfile
+    Derived from the Agenthon 2026 Track 3 baseline
+    (https://github.com/Agenthon-2026/track3-simulation-public), MIT License.
+    These files keep that licence.
+
+ABIDES (https://github.com/jpmorganchase/abides-jpmc-public), BSD 3-Clause License
+    Not included. The submission image fetches it at build time at the commit the
+    benchmark pins. The native engine in native/ reimplements its behaviour and
+    contains no ABIDES source code.
+
+NumPy (https://numpy.org), BSD 3-Clause License
+    native/rng/np_random.hpp reimplements the algorithms of NumPy's legacy
+    RandomState so that the same seeds give the same streams.
+
+Benchmark scenarios, reference outputs, harness and toolkit
+    Not included. scripts/fetch_upstream.sh clones them from the organizers'
+    repositories, where their own licences apply (the toolkit is CC BY-NC 4.0).
