@@ -1,5 +1,7 @@
 # A bit-exact native reimplementation of the ABIDES market simulator
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23298584.svg)](https://doi.org/10.5281/zenodo.23298584)
+
 This repository holds a C++ reimplementation of the [ABIDES](https://github.com/jpmorganchase/abides-jpmc-public) agent-based market simulator, as pinned by the Agenthon 2026 Track 3 (simulation) benchmark. For every scenario of that benchmark it produces the same order trace and message ledger as the Python reference, row for row and value for value, and it does so in a single static binary that starts in a few milliseconds.
 
 It was written as a competition entry by Shashwat Srivastava (Independent Researcher, team S2WISH). The work is described in the report in [paper/](paper/), and every experiment, including the failed ones, is recorded in [docs/REPORT.md](docs/REPORT.md).
@@ -81,7 +83,7 @@ Correctness is checked before speed on every build:
 | [sub/](sub/) | Submission image: Dockerfiles, reference adapter and patches |
 | [repro/](repro/) | Reproduction kit: baseline against candidate, identity and regression steps |
 | [lab/](lab/) | Validation and benchmark scripts, measurement data, source snapshots of scored builds |
-| [paper/](paper/) | Illustrated report (Markdown, HTML, PDF), figures and the scripts that build them |
+| [paper/](paper/) | Illustrated report (Markdown, PDF), figures and the scripts that build them |
 | [docs/](docs/) | Full laboratory record and the parts it is assembled from |
 
 ## Getting started
@@ -125,7 +127,7 @@ The reference outputs that the comparisons read are produced by the reproduction
 
 ```sh
 python paper/make_figures.py          # figures from the data in lab/bench/
-python paper/build_report.py          # HTML, and PDF through a headless Chromium-based browser
+python paper/build_report.py          # PDF through a headless Chromium-based browser (an intermediate HTML file is written and not kept in the repository)
 python docs/report_src/assemble_1.py && python docs/report_src/assemble_2.py   # docs/REPORT.md
 ```
 
@@ -142,4 +144,4 @@ python docs/report_src/assemble_1.py && python docs/report_src/assemble_2.py   #
 
 The code in this repository is released under the [Apache License 2.0](LICENSE). Files derived from the organizers' baseline keep their original licence; see [NOTICE](NOTICE). ABIDES, the benchmark scenarios and the organizers' toolkit are not part of this repository.
 
-To cite this work, see [CITATION.cff](CITATION.cff).
+To cite this work, use the archived release, [doi:10.5281/zenodo.23298584](https://doi.org/10.5281/zenodo.23298584), or see [CITATION.cff](CITATION.cff).

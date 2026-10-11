@@ -64,3 +64,6 @@ Thumbs.db
 
 # ---- Saved copies of submission descriptors (team identifiers) ----
 /lab/bench/submission_*.json
+
+# ---- Intermediate file of paper/build_report.py ----
+/paper/zenodo_report.html

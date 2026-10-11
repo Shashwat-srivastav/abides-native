@@ -4,7 +4,7 @@
 
 **Team:** S2WISH (team 36) · **Version:** 1.3 · **Status of results:** Development phase (practice board); the Final had not been run when this was written
 
-**Author:** Shashwat Srivastava · **Affiliation:** Independent Researcher
+**Author:** Shashwat Srivastava ([ORCID 0009-0000-0033-5570](https://orcid.org/0009-0000-0033-5570)) · **Affiliation:** Independent Researcher
 
 ---
 
