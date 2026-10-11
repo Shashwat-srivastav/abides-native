@@ -2,7 +2,7 @@
 
 This repository holds a C++ reimplementation of the [ABIDES](https://github.com/jpmorganchase/abides-jpmc-public) agent-based market simulator, as pinned by the Agenthon 2026 Track 3 (simulation) benchmark. For every scenario of that benchmark it produces the same order trace and message ledger as the Python reference, row for row and value for value, and it does so in a single static binary that starts in a few milliseconds.
 
-It was written as a competition entry by Shashwat (Independent Researcher, team S2WISH). The work is described in the report in [paper/](paper/), and every experiment, including the failed ones, is recorded in [docs/REPORT.md](docs/REPORT.md).
+It was written as a competition entry by Shashwat Srivastava (Independent Researcher, team S2WISH). The work is described in the report in [paper/](paper/), and every experiment, including the failed ones, is recorded in [docs/REPORT.md](docs/REPORT.md).
 
 ## The problem
 

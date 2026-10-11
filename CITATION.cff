@@ -3,14 +3,17 @@ message: "If you use this software or its report, please cite it as below."
 title: "When the Container Is the Benchmark: A Bit-Exact Native Reimplementation of the ABIDES Market Simulator and What Whole-Container Timing Rewards"
 type: software
 authors:
-  - name: "Shashwat"
+  - family-names: "Srivastava"
+    given-names: "Shashwat"
     affiliation: "Independent Researcher"
-version: "1.0"
-date-released: "2026-10-09"
+version: "1.3"
 license: Apache-2.0
+repository-code: "https://github.com/Shashwat-srivastav/abides-native"
+abstract: "A C++ reimplementation of the ABIDES agent-based market simulator that reproduces the Python reference's order trace and message ledger exactly, written for Agenthon 2026 Track 3, where the score is verified events divided by whole-container time. The repository holds the engine, a static launcher with its own Parquet writer, the validation and fuzzing tools, the complete laboratory record and a technical report. The best Development score reached is 203,394 events per container-second."
 keywords:
   - agent-based simulation
   - market microstructure
   - ABIDES
   - bit-exact reproduction
   - benchmarking
+  - performance engineering

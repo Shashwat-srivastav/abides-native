@@ -35,7 +35,7 @@ strong { font-weight: 650; }
 </style></head><body><main><h1>When the Container Is the Benchmark: A Bit-Exact Native Reimplementation of the ABIDES Market Simulator and What Whole-Container Timing Rewards</h1>
 <p><strong>Technical report — Agenthon 2026, Track 3 (Accelerated Market Simulation)</strong></p>
 <p><strong>Team:</strong> S2WISH (team 36) · <strong>Version:</strong> 1.3 · <strong>Status of results:</strong> Development phase (practice board); the Final had not been run when this was written</p>
-<p><strong>Author:</strong> Shashwat · <strong>Affiliation:</strong> Independent Researcher</p>
+<p><strong>Author:</strong> Shashwat Srivastava · <strong>Affiliation:</strong> Independent Researcher</p>
 <hr />
 <h2>Abstract</h2>
 <p>Agenthon 2026 Track 3 asks participants to make the ABIDES agent-based market simulator faster while reproducing its outputs exactly: the order-event trace and the message ledger of every scenario must equal the reference. We built a C++ engine that reproduces ABIDES event for event and numpy's legacy random streams draw for draw, and verified it on the 65 public scenarios, 30 batch sub-scenarios and 1,318 stored differential-fuzz cases with recorded reference hashes.</p>

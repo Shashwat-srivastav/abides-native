@@ -1,6 +1,6 @@
 # Agenthon 2026 · Track 3 (Accelerated Market Simulation): engineering report and reproduction guide
 
-**Author:** Shashwat (Independent Researcher) · **Team:** S2WISH (team 36)
+**Author:** Shashwat Srivastava (Independent Researcher) · **Team:** S2WISH (team 36)
 **Track verbs:** `simulate`, `simulate-batch`
 **Ranked metric:** events/sec, gated on exact semantics
 The previous version is kept as `docs/report_src/REPORT_v1.md`. A shorter, illustrated version for publication is in `paper/` (`zenodo_report.pdf`, built by `paper/make_figures.py` and `paper/build_report.py`).

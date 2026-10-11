@@ -246,7 +246,7 @@ Checks so far: tables 65/65; six no-ledger units 6/6; eight repeated runs of fou
 - **Repository made publishable.** Git initialised; `.gitignore`, `.gitattributes`, `README.md`, `LICENSE` (Apache-2.0), `NOTICE`, `CITATION.cff`, `scripts/fetch_upstream.sh`, `sub/README.md` added. This document moved to `docs/REPORT.md`, with its parts and assemblers in `docs/report_src/`. Machine-specific absolute paths were removed from nine scripts and the two report assemblers. The organizers' checkouts, generated outputs, binaries and the submission descriptor are not tracked.
 - **Deleted to free space** (about 1.9 GB, all regenerable outputs): `lab/e2e`, `lab/ab1`, `lab/reg_*`, `lab/batch_*`, `lab/rt`, `repro/out_sub5` to `out_sub8`, `repro/out_smoke`, validation output directories of sub7 and sub8, and old scratch outputs. **Earlier sections cite some of these directories as the location of raw outputs; those directories no longer exist.** Their summary logs and the JSON timing files in `lab/bench/` remain.
 - **Two workspace directories removed.** `sub/build_submission.py` and `lab/run_reg.sh` loaded the organizers' toolkit from them (v2.4.0). Both now load `toolkit-v2.5.1`. Before the switch we checked that both versions seal a descriptor to the same digest, including the digest stored in the current `submission.json`; the first real run of the script after the switch produced the sub13 zip.
-- **Author recorded** in this report and in the paper: Shashwat, Independent Researcher.
+- **Author recorded** in this report and in the paper: Shashwat Srivastava, Independent Researcher.
 
 #### 9.8.12 Experiments of this section
 

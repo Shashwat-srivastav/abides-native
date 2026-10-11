@@ -4,7 +4,7 @@
 
 **Team:** S2WISH (team 36) · **Version:** 1.3 · **Status of results:** Development phase (practice board); the Final had not been run when this was written
 
-**Author:** Shashwat · **Affiliation:** Independent Researcher
+**Author:** Shashwat Srivastava · **Affiliation:** Independent Researcher
 
 ---
 
