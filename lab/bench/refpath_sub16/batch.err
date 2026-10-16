@@ -1,0 +1,5 @@
+t3launch: using the Python path (reference path forced)
+/usr/local/lib/python3.11/site-packages/abides_markets/agents/trading_agent.py:790: UserWarning: Execution received for order not in orders list: (Agent 8 @ 2021-02-05 09:30:00) : ASK 7 ABM @ $999.99 (filled @ $999.99)
+  warnings.warn(f"Execution received for order not in orders list: {order}")
+/usr/local/lib/python3.11/site-packages/abides_markets/agents/trading_agent.py:790: UserWarning: Execution received for order not in orders list: (Agent 8 @ 2021-02-05 09:30:00) : ASK 4 ABM @ $999.96 (filled @ $999.96)
+  warnings.warn(f"Execution received for order not in orders list: {order}")

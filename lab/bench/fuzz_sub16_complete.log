@@ -1,0 +1,17 @@
+progress 100 of 1318 69 s
+progress 200 of 1318 157 s
+progress 300 of 1318 223 s
+progress 400 of 1318 288 s
+progress 500 of 1318 360 s
+progress 600 of 1318 444 s
+progress 700 of 1318 548 s
+progress 800 of 1318 624 s
+progress 900 of 1318 702 s
+progress 1000 of 1318 790 s
+progress 1100 of 1318 855 s
+progress 1200 of 1318 916 s
+progress 1300 of 1318 980 s
+cases 1318 skipped (no OK reference) 197 seconds 992
+      22  OK python-native / handed-to-python
+    1296  OK python-native / launcher
+rc=0

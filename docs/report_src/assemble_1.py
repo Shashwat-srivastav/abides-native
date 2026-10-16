@@ -30,7 +30,7 @@ sec2 = sec2.rstrip().rstrip("-").rstrip() + "\n\n"
 
 sec4to6 = between("## 4. Method: how decisions were made", "## 7. Phase B: the bit-exact native engine")
 sec4to6 = must_replace(sec4to6, "All three rounds together used about 5,100 tokens.",
-    "| 4 | | Next step under the new scoring: ship the launcher / cut large-unit time / cut small-unit fixed cost / refresh the stale rules checkout; which units drive the mean; is shipping before refreshing an acceptable risk? | Values: ship 2.67, large units 1.69, small-unit cost 1.02, refresh 0.52. **First step: refresh, 47%** (ship 40%). Acceptable risk: 0.38. Mean driven by small units: 0.95 | Refreshed the checkout (unchanged scenarios), validated with the upstream harness, then pushed sub4. We did not adopt the \"small units drive the mean\" answer (§15, H31) | 1,349 / 157 |\n\nThe first four rounds together used about 6,600 tokens; rounds 5 to 7 are in §9.7.5 and §9.9.6.")
+    "| 4 | | Next step under the new scoring: ship the launcher / cut large-unit time / cut small-unit fixed cost / refresh the stale rules checkout; which units drive the mean; is shipping before refreshing an acceptable risk? | Values: ship 2.67, large units 1.69, small-unit cost 1.02, refresh 0.52. **First step: refresh, 47%** (ship 40%). Acceptable risk: 0.38. Mean driven by small units: 0.95 | Refreshed the checkout (unchanged scenarios), validated with the upstream harness, then pushed sub4. We did not adopt the \"small units drive the mean\" answer (§15, H31) | 1,349 / 157 |\n\nThe first four rounds together used about 6,600 tokens; rounds 5 to 8 are in §9.7.5, §9.9.6 and §9.10.4.")
 sec4to6 = must_replace(sec4to6, "All three rounds", "All four rounds", 0) if False else sec4to6
 sec4to6 = must_replace(sec4to6, "| Fuzzer | `native/fuzz/` | 2,416 differential cases; 2 bug classes found and fixed (§8) |",
     "| Fuzzer | `native/fuzz/` | 2,416 differential cases; 2 bug classes found and fixed (§8) |\n| Rules and leaderboard research | Report on the live board, the scoring rules in the upstream repositories, the reference timing code, and which techniques are allowed | Its headline finding (scoring changed partway through the Development phase; local checkout stale) was confirmed by reading the organizer post, the upstream README and the board directly (§2.2, §16.5) |\n| Low-latency code review (read-only) | Ranked list of exact-output-preserving optimisations and a bug check of the rewritten engine | No bug found; the blocked-queue equivalence was derived independently (§7.7) |")
@@ -42,7 +42,7 @@ sec7 = sec7.rstrip().rstrip("-").rstrip() + "\n\n" + rd("docs/report_src/_rep_s7
 
 sec8 = between("## 8. Robustness: differential fuzzing", "## 9. Submission rounds: sub1 → sub2 → sub3")
 sec9 = between("## 9. Submission rounds: sub1 → sub2 → sub3", "## 10. Complete experiment log")
-sec9 = must_replace(sec9, "## 9. Submission rounds: sub1 → sub2 → sub3", "## 9. Submission rounds: sub1 → sub19")
+sec9 = must_replace(sec9, "## 9. Submission rounds: sub1 → sub2 → sub3", "## 9. Submission rounds: sub1 to the Final")
 sec9 = must_replace(sec9, "### 9.3 sub3 → pushed; projected 8.7–8.8M", "### 9.3 sub3 → pushed, never uploaded (projection of 8.7–8.8M applied to the old rule)")
 sec9 = sec9.rstrip().rstrip("-").rstrip() + "\n\n" + rd("docs/report_src/_rep_s9.md").rstrip() + "\n\n" + rd("docs/report_src/_rep_s9b.md").rstrip() + "\n\n" + rd("docs/report_src/_rep_s9c.md").rstrip() + "\n\n" + rd("docs/report_src/_rep_s9d.md").rstrip() + "\n\n" + rd("docs/report_src/_rep_s9e.md").rstrip() + "\n\n---\n\n"
 

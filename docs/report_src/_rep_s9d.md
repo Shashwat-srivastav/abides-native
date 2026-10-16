@@ -18,17 +18,17 @@ Each score arrived 45 to 60 minutes after its upload.
 
 The top of the board at that point (29 teams): fuzz 231,024.24; abc123 221,088.30; Yan Su 210,016.36; Proof of Alpha 209,558.04; IMAnonymous 206,925.97. The first two were unchanged from the previous fetch; the other three had moved or appeared since. Six teams were above 200,000 a few hours later.
 
-#### 9.8.2 sub9 on the host: the memory work was worth nothing there
+#### 9.8.2 sub9 on the host: no gain observed from the memory work
 
-sub9 carried the two rounds of memory work of §9.7.7 and §9.7.8, measured locally at −12.5% and −12.1% process time. The fitted model of §9.5 predicted about 190,000. The host returned 183,420, below the 184,858 of the build without that work.
+sub9 carried the two rounds of memory work of §9.7.7 and §9.7.8, measured locally at −12.5% and −12.1% process time. The fitted model of §9.5 predicted about 190,000. The host returned 183,420, below the 184,858 of the build without that work (−0.8%).
 
-- **Size of the miss:** two identical uploads once differed by 1.6% (§9.4), so the drop of 0.8% is inside the noise. The predicted gain of about 3% is clearly absent.
+- **Size of the miss:** one upload per side; the −0.8% is within the reported noise (§9.10.2), so it is **not established** that the memory work gained nothing, or lost, on the host. What the pair does show is that the predicted gain of about 3% did not appear in this one comparison.
 - **Reading at the time:** either the host rewards process-time savings much less than modelled, or the huge-page requests and the up-front population of buffers cost time on a busy shared host that they do not cost on a fresh laptop VM.
-- **Reading after §9.8.5 and §9.8.6:** page-fault costs that dominate laptop timings barely register on the host. The laptop's "23% faster" was a property of the laptop.
+- **Reading after §9.8.5 and §9.8.6:** page-fault costs that dominate laptop timings may barely register on the host, and the laptop's "23% faster" may be a property of the laptop. This is a reading of single uploads, not an established result.
 
-*(Later note on "inside the noise", here and in §9.8.4 and §9.8.15: the 1.6% comes from two uploads that were never checked to carry the same image (§9.4). The organizers state that the host is a single machine taking only Track 3 runs, one submission at a time, and another team reports two runs agreeing to within 0.1% (§9.9.2). Differences of 0.2% to 0.8% between two of our builds may therefore be real.)*
+*(Later note on "inside the noise", here and in §9.8.3, §9.8.4, §9.8.6 and §9.8.15: at the time we took the 1.6% between our two sub4 uploads (§9.4) as the noise. Those two uploads were never checked to carry the same image. The organizers then stated that the host is a single machine taking only Track 3 runs, one submission at a time, and another team reported two runs agreeing to within 0.1% (§9.9.2); later still, another team reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2), and the organizers could not settle which is right. Every comparison in this section rests on one Development upload per side and differs by a few percent (sub7 → sub9 −0.8%, sub9 → sub10 +2.9%, sub10 → sub11 +0.2%, sub11 → sub13 −2.6%), so each is an observation within the reported noise, not an established difference.)*
 
-Hypothesis H51 of §9.7.10 ("memory handling dominates remaining process time") was confirmed on the laptop and is **refuted for the scoring host**.
+Hypothesis H51 (§15; "memory handling dominates remaining process time") was confirmed on the laptop; for the scoring host it is **not established (one upload per side, within the reported noise)**.
 
 #### 9.8.3 sub10: no message ledger where the card does not require one
 
@@ -74,7 +74,7 @@ The six units hold 3,321,467 of the 7,728,572 public events, and about 37% of ou
 
 *(Caveat found later: `bench_unit_dirs.py` reads the inputs from the unit folders, which on this laptop are a Windows-backed mount that adds 10 to 20 ms per run which the scoring host does not have. This applies to every whole-process figure of §9.8 that was measured from the unit folders: §9.9.3. The figures are left as measured.)*
 
-**On the host:** 188,687, +2.9% over sub9. The investigation agent had estimated +2.1K to +3.0K; the result was +5.3K. Removing real work on heavy units paid about twice what the model said.
+**On the host:** 188,687, +2.9% over sub9. The investigation agent had estimated +2.1K to +3.0K; the observed difference was +5.3K, about twice the estimate. One upload per side, within the reported noise (§9.8.2 note, §9.10.2), so neither the gain nor its size relative to the estimate is established; the ledger skip itself was accepted by the scorer (the score is valid).
 
 #### 9.8.4 sub11: profile-guided build, earlier exit, and two memory switches
 
@@ -99,7 +99,7 @@ So on the laptop, warm, both switches off cost about 70% on the largest unit.
 
 **Full validation of sub11:** tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318/1,318. The scratch image with both switches off (`sub11m`) has a byte-identical binary and passes official regression 65/65, batch 6/6 and the six no-ledger units.
 
-**On the host, with both switches off:** 189,018, against sub10's 188,687 (+0.2%, inside the noise). The switch that costs 70% on the laptop costs nothing measurable on the host. What this upload cannot say is whether the profile-guided build helped: a small compiler gain and a small memory loss would cancel to the same number. It bundled two things, which §9.8.7 criticises.
+**On the host, with both switches off:** 189,018, against sub10's 188,687 (+0.2%; one upload per side, within the reported noise, not established). No cost of the switches that cost 70% on the laptop was visible in this one comparison; a 0.2% gap between two uploads says nothing either way. What this upload cannot say is whether the profile-guided build helped: a small compiler gain and a small memory loss would cancel to the same number. It bundled two things, which §9.8.7 criticises.
 
 *(On "inside the noise" see the note in §9.8.2.)*
 
@@ -140,7 +140,9 @@ What this shows and what it does not:
 | sub9 → sub10 | Ledger not recorded or written on six heavy units | −11.9% on those units | +2.9% |
 | sub10 → sub11 | Profile-guided build, earlier exit, memory switches off | −1.9% then about +70% on the largest unit | +0.2% |
 
-The host pays for removed instructions and removed output work. It does not pay for avoided page faults, and it does not charge for restoring them.
+Every host figure is one upload per side. Only sub4 → sub5 is larger than the spread later reported between identical images; the other four lie within the reported noise (§9.10.2) and are not established.
+
+Our reading at the time was: the host pays for removed instructions and removed output work; it does not pay for avoided page faults, and it does not charge for restoring them. That pattern is consistent with these five uploads but rests on single uploads with few-percent differences, so it is a hypothesis, not an established result.
 
 #### 9.8.7 Two read-only reviews by agents
 
@@ -157,7 +159,7 @@ Both were forbidden to use Docker, to modify sources, or to push anything. Their
 **Second review (a deliberately harsh critique, persona of a low-latency systems engineer).**
 
 - **The fitted model of §9.5 is wrong.** The total of 7,728,572 rows over 71 units puts the score with zero process time at 108,853 ÷ c for a fixed cost of c seconds. The leader's 231,024 therefore requires c ≤ 0.471 s. More plausibly c is 0.30–0.42 s and our process runs 1.5 to 2.4 times slower on the host than the warm laptop numbers.
-- **The laptop has been contradicted by the host twice** (sub9 and sub10, in opposite directions).
+- **The laptop has been contradicted by the host twice** (sub9 and sub10, in opposite directions). (Both host results are one upload per side within the reported noise, §9.10.2.)
 - **Small units matter.** The 58 units under 100,000 rows carry 45–50% of the score, so fixed per-run milliseconds count on all of them: thread creation, allocation churn.
 - **Upload budget.** `toolkit-v2.5.1/docs/DEVELOPMENT-RUNTIME.md` caps Track 3 at **5 uploads per day and 20 in total** for the Development phase. We verified this in the document. We had been planning with the daily limit only.
 - **Scorer reading.** Tier A cards compare fills exactly and the rest as a multiset with a rank-correlation threshold; Tier B cards require the exact row count and statistical checks; the ledger is checked for self-consistency and coverage, never row by row. It found no large legitimate saving beyond the ledger skip, and it listed three things near a rule boundary that we will not do (a null trace hash, a truncated ledger, an all-null ledger column).
@@ -250,46 +252,11 @@ Checks so far: tables 65/65; six no-ledger units 6/6; eight repeated runs of fou
 
 #### 9.8.12 Experiments of this section
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E82 | sub9 scratch image on the host | 183,420 (−0.8% against sub7) | Memory work does not pay on the host |
-| E83 | Read the scorer and README for the ledger rule; count cards | 12 of 71 cards say `false`; 6 usable | Implement the skip |
-| E84 | sub10: six no-ledger units, skip against full | 6/6 correct; −11.9% process time on them | Validate, push |
-| E85 | sub10 on the host | 188,687 (+2.9%) | Removing real work pays about twice the model's estimate |
-| E86 | Profile-guided `-O3` build | −1.9% on six units; tables 65/65 | Keep |
-| E87 | Memory switches, warm, largest unit | Both off: +70% | Ship switched off once, as a host experiment |
-| E88 | Fresh-container timing (`lab/cold_runs.sh`) | 2–5 times slower than warm; set-up phase 33–429 ms; VM has 2.97 GB | Local memory and thread timings are not evidence about the host |
-| E89 | Throttling counters in fresh containers | `nr_throttled 0` in 6 of 6 | Quota is not the cause locally |
-| E90 | sub11 (memory switches off) on the host | 189,018 (+0.2%) | Switches cost nothing on the host; keep them off |
-| E91 | Organizers' repository checked for new commits | None since the scoring change | Rules unchanged |
-| E92 | Upload limits read in the runtime guide | 5 per day, 20 in total | Bundle validated changes; no upload for small predicted gains |
-| E93 | sub12: streaming writer | Fully validated; peak memory 92 → 88 MB | Folded into sub13 |
-| E94 | sub13: pooled threads, scratch reuse, allocator settings, thread cap, agent layout | Fully validated; uploaded | Score pending |
-| E95 | sub14: trace in final order during the run | 65/65 first time; −6.8% warm on seven units; 89 → 66 MB | Full validation |
-| E96 | sub15: writer threads during the run | Correct and byte-stable; speed not yet measured | Measure on a quiet machine, then validate |
-| E97 | Toolkit v2.4.0 against v2.5.1 descriptor sealing | Identical digests | Scripts repointed |
-
-*(Later results: E92, the total is 23, not 20 (§9.9.1); E94, sub13 scored 184,046.62 (E98); E96, see E103 and, for the host, E116 and E117.)*
+The experiments of this section are E82 to E97 in §10, which also gives their later results (E92: the total is 23 uploads, not 20, §9.9.1; E94: sub13 scored 184,046.62, E98; E96: see E103 and, for the host, E116 and E117).
 
 #### 9.8.13 Hypotheses of this section
 
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H54 | The memory work of sub8 and sub9 is worth about 3% on the host | E82 | **Refuted** (−0.8%) |
-| H55 | The scorer does not need a ledger on units whose card says so | E83, E85 | **Confirmed** in the code and by a valid score |
-| H56 | The ledger skip is worth 2–3K | E85 | **Exceeded** (+5.3K) |
-| H57 | Huge-page requests and up-front population cost time on the host | E90 | **Not supported**: switching them off changed nothing measurable |
-| H58 | Switching them off costs time on the host, as it does on the laptop | E90 | **Refuted** |
-| H59 | The CPU quota throttles our threads | E89 | **Refuted locally**; unknown on the host |
-| H60 | The fixed cost per container is about 0.55 s (§9.5) | Leader's score; second review | **Refuted**: it must be at most 0.47 s |
-| H61 | Warm best-of-N timing predicts the direction of a host score | E82, E85, E90 | **Refuted** for memory-related changes; held for removed work |
-| H62 | Per-run overheads (threads, allocation) are visible on the host | E94 | **Open** (sub13 pending) |
-| H63 | Building the trace in order during the run removes real work | E95 | **Supported locally** (−6.8% warm, −26% peak memory); host unknown |
-| H64 | Writing the files during the run is a net gain | E96 | **Open** |
-| H65 | 210,000 is reachable by the Development deadline | Second review: about 18% | **Open** |
-| H53 | 240,000 is reachable by the Development deadline | Second review: 1–2% | **Open; very doubtful** |
-
-*(The current status of every hypothesis is in §15. H64 and H68 are one hypothesis under two numbers.)*
+The hypotheses of this section are H53 and H54 to H65 in §15, which holds the current status of each. H64 and H68 are one hypothesis under two numbers.
 
 #### 9.8.14 Failures of this section
 
@@ -308,17 +275,17 @@ Checks so far: tables 65/65; six no-ledger units 6/6; eight repeated runs of fou
 
 #### 9.8.15 sub13's score, a gap in sub14, and a step back to sub11's writer
 
-Written at the end of the same day. It supersedes the "pending" remarks in §9.8.8, §9.8.9, §9.8.10, §9.8.12 (E94) and §9.8.13 (H62).
+Written at the end of the same day. It supersedes the "pending" remarks in §9.8.8, §9.8.9, §9.8.10, §9.8.12 and §9.8.13 (E94 in §10, H62 in §15).
 
 **sub13 scored 184,046.62** (upload 971360), 2.6% below sub11's 189,018.
 
 - It changed five things at once (§9.8.8) and went up without a timing comparison against sub11.
 - First explanation: its writer parallelises across row groups of 65,536 rows, so any file below that size is encoded on one thread, where sub11 encoded a file's columns on several.
 - The measurement taken afterwards does not support it: over the 27 units under 60,000 rows sub13 took 802 ms against sub11's 873 ms (table below).
-- The drop is 1.6 times the difference once seen between two identical uploads (§9.4). It may be partly noise.
+- The drop is one upload per side and within the reported noise (§9.10.2); it is **not established** that sub13 is slower on the host than sub11 at all.
 - **We do not know which of the five changes, if any, cost the 2.6%.**
 
-*(Later note: still not known. On the sub17 binary, writer threads during the run scored 1.6% above the same binary without them (199,285 against 196,165), so "a streaming writer loses on the host" is not a safe reading of sub13 (§9.9.8). On "partly noise" see the note in §9.8.2.)*
+*(Later note: still not known. On the sub17 binary, writer threads during the run scored 1.6% above the same binary without them (199,285 against 196,165; also one upload per side, within the reported noise), so "a streaming writer loses on the host" is not a safe reading of sub13 (§9.9.8). On the noise see the note in §9.8.2.)*
 
 **Laptop measurement of six builds** (`lab/measure_builds.sh 2 3 sub9 sub10 sub11:off sub13:off sub14:off sub15:off`: all 65 single-scenario units from their unit directories, so the launcher sees each card; two interleaved rounds of three runs; best run per unit; sub11 and later with the memory switches off, as shipped; results in `lab/bench/fig_<tag>_<round>.json`, log in `lab/bench/measure_fig.log`):
 
@@ -370,26 +337,9 @@ The last row says the writer threads themselves made no difference in that run; 
 
 **Figures.** `paper/make_figures.py` now covers builds through sub15 (per-unit time, totals, page faults and peak memory), marks the two figures of the first fit as refuted, and adds two: the laptop's prediction against the host's score for each step, and the bound on the fixed cost.
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E98 | sub13 on the host | 184,047 (−2.6% against sub11) | Do not build further on sub13's writer until understood |
-| E99 | Six builds, 65 units, warm (`lab/measure_builds.sh`) | Totals 3.48–3.86 s; rounds of one build differ by up to 14% | Laptop time cannot rank these builds |
-| E100 | Breakdown of sub14's fuzz replay | 29 cases fell to the reference path | Investigate before any scratch image of sub14 |
-| E101 | Reason and common feature of the 29 | Negative latency; rows out of time order | Restore exact handling |
-| E102 | `repair_trace` and file restart | 29 of 29 handled by the launcher, tables equal to sub13's | Keep |
-| E103 | sub15 with 4,096-row groups, three timing comparisons | −13.7%, +4.4%, +12.5% | Inconclusive; do not upload sub15 first |
-| E104 | sub16: sub15's engine with sub11's writer | Built | Validate; candidate for the next upload |
+The experiments of this subsection are E98 to E104 in §10 (E104, sub16, was uploaded and scored 203,394.47: E105, §9.9.4).
 
-*(E104: uploaded, 203,394.47 (E105, §9.9.4).)*
-
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H62 | Per-run overheads (threads, allocation) are visible on the host | E98 | **Not supported**: the build that removed them scored lower |
-| H66 | sub13 lost because small files are encoded on one thread | E99 | **Not supported by the laptop**; untested on the host |
-| H67 | Trace rows always arrive in time order | E100, E101 | **Refuted** for negative latencies |
-| H68 | Writer threads during the run are a net gain | E103 | **Open**; local timing contradicts itself |
-
-*(H68 was answered on the host, in favour of the writer threads on the sub17 binary: §9.9.8, §9.9.13.)*
+The hypotheses of this subsection are H62 and H66 to H68 in §15. (H68 was later tested on the host on the sub17 binary: writer threads scored 1.6% higher, one upload per side, within the reported noise, so not established: §9.9.8, §9.10.2.)
 
 | Failure | Cause | Resolution |
 |---|---|---|

@@ -127,7 +127,7 @@ Digests of sub1–sub3 are in §14.5. Those images have no launcher; the kit lab
 | Cycles and instructions per event (§7.7) | Instructions: closely; cycles: CPU-dependent |
 | events/s, process times, `docker run` times | Machine-dependent; expect similar ratios between images, not the same numbers |
 | Image digest after a rebuild | No (build timestamps and metadata); behaviour is identical |
-| Leaderboard score | Depends on the organizers' host and, in Development, on a single run per unit. The organizers state that the host is one machine that takes only Track 3 runs; another team reports two runs agreeing to within 0.1% (§9.9.2). We have no repeat upload of our own to confirm it |
+| Leaderboard score | Depends on the organizers' host and, in Development, on a single run per unit. The organizers state that the host is one machine that takes only Track 3 runs; another team reported two runs agreeing to within 0.1% (§9.9.2), and later another team reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2). We have no repeat upload of our own; differences of a few percent between single uploads are not established (§11.2) |
 
 ### 12.7 Results of our own end-to-end reproduction runs
 
@@ -152,7 +152,7 @@ Digests of sub1–sub3 are in §14.5. Those images have no launcher; the kit lab
 | Host end-to-end timing (§1.4) | `python lab/e2e.py agenthon-track3:sub3,agenthon-track3:sub4 3 <scenario,…>` |
 | Runtime-restriction check (§9.4) | `docker run --rm --network none --read-only --user 65534:65534 --pids-limit 256 --cpus 4 --tmpfs /tmp:size=64m,noexec -v <in>:/input:ro -v <out>:/output <image> simulate --config /input/scenario.json --out /output/trace.parquet` |
 | Fuzzing (§8) | `native/fuzz/gen.py` / `mk_*.py` to generate, `driver.py` to run, `recheck.py` (Python path) or `recheck_launcher.py` (reference vs launcher vs Python path) to re-verify |
-| Decision rounds (§4.2, §9.7.5, §9.9.6) | not reproducible from this repository (scripts and raw responses are not deposited); the questions and answers of the seven rounds are in the sections cited |
+| Decision rounds (§4.2, §9.7.5, §9.9.6, §9.10.4) | not reproducible from this repository (scripts and raw responses are not deposited); the questions and answers of the eight rounds are in the sections cited |
 
 The `lab/` scripts were written for this machine. They now find the project root from their own location (the absolute paths were removed, §9.8.11); several are meant to run inside the dev container `t3dev` (§14.1). The `repro/` kit is the portable version.
 
@@ -162,7 +162,7 @@ The `lab/` scripts were written for this machine. They now find the project root
 3. `docker tag agenthon-track3:<name> slashalpha/agenthon-track3:<tag> && docker push slashalpha/agenthon-track3:<tag>`
 4. Copy the pushed digest into `sub/submission.json` → `image.digest`.
 5. Run `python sub/build_submission.py`. It prompts for the **Team Key** (hidden), reseals the descriptor, and writes `sub/submission.zip`. Run this step yourself, in an ordinary terminal.
-6. Upload `sub/submission.zip` on CodaBench under *My Submissions → Development* (5 uploads per day and 23 per person in total; §9.9.1).
+6. Upload `sub/submission.zip` on CodaBench under *My Submissions → Development* (5 uploads per day and 23 per person in total; §9.9.1). The Final phase (*Final & Verification*) allowed one upload per person (§9.10.2).
 
 ### 12.10 Checks and measurements used from sub7 on
 
@@ -173,6 +173,7 @@ These are the commands behind §9.7 to §9.9. Scripts under `lab/` are run from 
 | Full validation of a full image | `bash lab/validate_image.sh <tag>`: tables of the 65 scenarios, repeat-run bytes (3 runs each), the 6 batch units under the runtime restrictions, a single run and a forced fallback run, the organizers' regression, the 1,318 stored fuzz cases. `bash lab/build_validate.sh <tag>` builds the image first; `bash lab/validate_rest.sh <tag>` runs only the last two stages | `lab/bench/validate_<tag>.log`, details in `lab/bench/val_<tag>/` |
 | Fast checks before the long validation | `bash lab/quick_checks.sh <tag> [reference tag]`: tables, the six no-ledger units, repeat-run stability with and without writer threads, the 29 negative-latency cases with no Python reachable | standard output |
 | Checks of a scratch image | `bash lab/scratch_checks.sh <scratch tag> <full tag>`: binary identical to the validated full image, batch 6, organizers' regression, six no-ledger units | `lab/bench/scratch_<tag>.log` |
+| The last-resort ABIDES path under the runtime restrictions | `bash lab/ref_path_check.sh <tag>`: forces `T3_NO_LAUNCHER=1 T3_FORCE_REFERENCE=1` on one single unit and one batch unit under the Final's restrictions and compares the single unit's tables with the reference (§9.10.3) | `lab/bench/refpath_<tag>/` |
 | Units that need no ledger | `bash lab/check_skip.sh <tag>` (§9.8.3) | terminal |
 | Why the launcher declined a fuzz case | `native/fuzz/decline_reasons.py` (launcher only, `PATH` emptied); `native/fuzz/dump_case.py` writes cases out | `lab/bench/failcases/` |
 | Fresh-container timing | `bash lab/cold_runs.sh <tag> <repeats> <unit> [docker run options]` (§9.8.5) | `lab/bench/cold_out/` |
@@ -184,7 +185,7 @@ These are the commands behind §9.7 to §9.9. Scripts under `lab/` are run from 
 | Hardware counters, one thread | `T3_LAT_THREAD=0 T3_TRAIL=0 perf stat -e cycles:u,instructions:u,branch-misses:u <binary> simulate …` (§9.9.3) | terminal |
 | The image's profile-guided build, in the dev container | `build_pgo_dev.sh <output binary>` | the binary |
 
-A scratch image with the helper thread off is made from an existing scratch image with `lab/bench/Dockerfile.nohelper` (`ARG BASE`, `FROM ${BASE}`, `ENV T3_LAT_THREAD=0`), which changes the image's environment and adds no layer (§9.9.8).
+A scratch image with the helper thread off is made from an existing scratch image with `lab/bench/Dockerfile.nohelper` (`ARG BASE`, `FROM ${BASE}`, `ENV T3_LAT_THREAD=0`), which changes the image's environment and adds no layer (§9.9.8). `lab/bench/Dockerfile.trail` (`ENV T3_TRAIL=1`, sub16t) and `lab/bench/Dockerfile.memoff` (`ENV T3_HUGE=0 T3_PREFAULT=0`, the Final image) are used the same way (§9.9.16, §9.10.4).
 
 ---
 
@@ -198,8 +199,8 @@ Paths that earlier versions of this table listed and that no longer exist are na
 | `paper/` | Shorter illustrated version (`zenodo_report.md`, `zenodo_report.pdf`), `make_figures.py`, `build_report.py` |
 | `repro/` | Portable reproduction kit (§12); `repro/out/full_run_sub4.log` is the log behind §12.7 |
 | `scripts/fetch_upstream.sh` | Fetches the organizers' checkouts, which are not tracked |
-| `sub/` | **Submission source:** `Dockerfile` (full image), `Dockerfile.min` (scratch image, §9.7.4), `t3native/`, `native/` (engine, launcher, RNG), `abides_fork/`, `patches/`, `perf/`, `submission.json`, `build_submission.py`, `README.md`. `simulate` / `simulate-batch` shell shims are kept but not installed by the Dockerfile |
-| `native/engine/engine.cpp` | Native engine (single source of truth; synced into `sub/` by `lab/sync_sub.sh`). At the time of writing it is sub18 plus the sensitivity-flag fix of §9.9.10. `engine_sub3.cpp` is the sub3 engine, kept for comparison |
+| `sub/` | **Submission source:** `Dockerfile` (full image), `Dockerfile.min` (scratch image, §9.7.4), `t3native/`, `native/` (engine, launcher, RNG), `abides_fork/`, `patches/`, `perf/` (`abides_fork/simulate.py` passes a temporary `log_dir` since the Final build, §9.10.3), `submission.json`, `build_submission.py`, `README.md`. `simulate` / `simulate-batch` shell shims are kept but not installed by the Dockerfile |
+| `native/engine/engine.cpp` | Native engine (single source of truth; synced into `sub/` by `lab/sync_sub.sh`). When §9.9 was written it was sub18 plus the sensitivity-flag fix of §9.9.10. The Final's engine is the snapshot `lab/bench/engine_final.cpp` (§9.10.3). `engine_sub3.cpp` is the sub3 engine, kept for comparison |
 | `native/engine/launcher.cpp` | No-Python `simulate` / `simulate-batch` |
 | `native/engine/pq_fast.hpp`, `sha256.hpp` | Built-in Parquet writer and SHA-256 (sub5 onward; §7.9) |
 | `native/engine/pgo_train/` | Training scenarios of the profile-guided build (§9.8.4) |
@@ -211,12 +212,13 @@ Paths that earlier versions of this table listed and that no longer exist are na
 | `native/pkg/t3native/` | Python package: `cli.py`, `batch.py`, `native_sim.py`, `writer.py` |
 | `native/refdump/` | ABIDES instrumentation, `first_divergence.py`, `DUMP_FORMAT.md`, `COVERAGE.md` |
 | `native/fuzz/` | Fuzz generators, case logs (`*.jsonl`), `recheck.py`, `recheck_launcher.py`, `recheck/` (22 stored failing cases), `recheck_stored.py` (replay of the 1,318 stored cases), `decline_reasons.py`, `dump_case.py` |
-| `lab/` | Development harnesses. Validation: `validate_image.sh`, `validate_rest.sh`, `build_validate.sh`, `build_variant.sh`, `quick_checks.sh`, `scratch_checks.sh`, `check_skip.sh`, `run_reg.sh`. Timing: `cold_runs.sh`, `measure_builds.sh`, `true_p.py`, `e2e.py`, `ab.py`. Comparison in the dev container: `cmp_bins.sh`, `cmp_tables.py`, `build_pgo_dev.sh`. |
-| `lab/bench/` | Logs and results: `validate_sub7.log` to `validate_sub19a.log`, `scratch_sub*.log`, `check_fast_all*.log`, `official_sub5.log`, `official_sub6.log`, timing files (`all_sub*.json`, `best_*.json`, `gb_sub*.json`, `ot_sub*.json`, `fig_*.json`, `truep_*.json`), `measure_fig.log`, source snapshots of each build (`engine_sub6.cpp` to `engine_sub19b.cpp`, `launcher_sub6.cpp` to `launcher_sub18.cpp`), `failcases/` (the 29 negative-latency fuzz cases), `Dockerfile.nohelper` |
+| `lab/` | Development harnesses. Validation: `validate_image.sh`, `validate_rest.sh`, `build_validate.sh`, `build_variant.sh`, `quick_checks.sh`, `scratch_checks.sh`, `check_skip.sh`, `run_reg.sh`. Timing: `cold_runs.sh`, `measure_builds.sh`, `true_p.py`, `e2e.py`, `ab.py`. Comparison in the dev container: `cmp_bins.sh`, `cmp_tables.py`, `build_pgo_dev.sh`. Last-resort path under the restrictions: `ref_path_check.sh` (§9.10.3). |
+| `lab/bench/` | Logs and results: `validate_sub7.log` to `validate_sub19a.log`, `validate_final.log` (the Final image), `checks_finalm.log` (the Final image with the memory settings), `fuzz_final.log` and `fuzz_sub16_complete.log` (fuzz replays of the Final image and of sub16), `refpath_<tag>/` (forced reference path), `pullcheck/` (the pushed Final image pulled back by digest), `scratch_sub*.log`, `check_fast_all*.log`, `official_sub5.log`, `official_sub6.log`, timing files (`all_sub*.json`, `best_*.json`, `gb_sub*.json`, `ot_sub*.json`, `fig_*.json`, `truep_*.json`), `measure_fig.log`, source snapshots of each build (`engine_sub6.cpp` to `engine_sub19b.cpp`, `launcher_sub6.cpp` to `launcher_sub18.cpp`), `engine_final.cpp` (the Final's engine), `failcases/` (the 29 negative-latency fuzz cases), `Dockerfile.nohelper`, `Dockerfile.trail`, `Dockerfile.memoff` |
 | `lab/sub5_src/` | Copy of the native sources and Dockerfile exactly as built into sub5 |
 | `lab/agent240/` | Scratch scripts of the first review (§9.8.7; not tracked) |
 | `lab/agent220/` | Records of the three agents: `model/` (score model), `osint/` (issue threads and public repositories), `engine/review.md` (§9.9.6) |
-| `lab/agent_report/facts_sub16_19.md` | Fact sheet from which §9.9 and the latest updates of §10 to §17 were written |
+| `lab/agent_report/facts_sub16_19.md` | Fact sheet from which §9.9 and the updates of §10 to §17 of that period were written |
+| `lab/agent_report/facts_final.md` | Fact sheet from which §9.10 and the updates of §0, §1 and §10 to §17 that concern the Final were written |
 | `docker_backup/` | `docker save` archive of the images in use (§9.8.11) |
 | `track3-simulation-public-clone/` | Organizer repo at `4cc7882` (scenarios, units, locally generated reference traces); not tracked |
 | `track3-upstream/` | Organizer repo at `bffb572` (current harness and rules); not tracked |
@@ -234,7 +236,7 @@ Paths that earlier versions of this table listed and that no longer exist are na
 - **CPU:** AMD Ryzen 5 5500U; SHA instructions present (`sha_ni`); no AVX-512 (`grep -c avx512f /proc/cpuinfo` → 0). Hardware performance counters are available inside privileged containers.
 - **Dev container:** `t3dev` (image `t3-native-perf`), with `/native`, `/units`, `/lab` and `/sub` mounted and `perf` installed (§9.9.11).
 - **Unit folders** are a Windows-backed mount inside containers and add 10 to 20 ms per run to anything timed from them (§9.9.3).
-- **Scoring host** (not ours): per the organizers a single machine, a Xeon Platinum 8570, that takes only Track 3 runs and is also the Final's machine (§2.2, §9.9.2).
+- **Scoring host** (not ours): per the organizers a single machine, a Xeon Platinum 8570, that takes only Track 3 runs and is also the Final's machine (§2.2, §9.9.2). Per the organizers' calibration, a KVM virtual machine on that CPU with 20 vCPUs (10 cores × 2 threads) and one NVIDIA B200 (§9.10.2).
 
 ### 14.2 Inside the submission image
 - This subsection describes the full image. The scratch images uploaded since sub7 hold only the static launcher, a `simulate-batch` symlink, empty directories and a two-line `passwd` and `group` (§9.7.4).
@@ -280,7 +282,7 @@ Check with: `sha256sum sub/native/engine/*.cpp sub/native/rng/np_random.hpp sub/
 
 ### 14.5 Image digests
 
-All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8.1 and §9.9.1.
+All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8.1, §9.9.1 and §9.10.
 
 | Image | Digest |
 |---|---|
@@ -302,7 +304,9 @@ All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8
 | sub16 binary, helper thread off `:native-v16-helper-off` | `sha256:31cb73d3789e38dba5f47f6c6e91068ecd216f45656fa1dd4fc405bbf8788f5c` |
 | sub18 binary, helper thread off `:native-v18-helper-off` | `sha256:b437b60816126789b60d9faa5c0c0a16b0fdd7d7e851d5b4711140ff5feaf6ce` |
 | sub18, helper sleeping `:native-v18-helper-sleeping` (pushed, never uploaded) | `sha256:2f9c4d39a04390cb7700dfc8730746efabe3cf9bbbe64c26846235fcfae38ea7` |
-| sub19a (scratch) `:native-v19a` (pushed; no host score at the time of writing) | `sha256:abca67f17b3558eedca6e44ec2e437ec5b9ff7ccb3121c4ad2c4879f53dcf434` |
+| sub19a (scratch) `:native-v19a` | `sha256:abca67f17b3558eedca6e44ec2e437ec5b9ff7ccb3121c4ad2c4879f53dcf434` |
+| sub16 binary, writer threads on `:native-v16t` (the last Development upload) | `sha256:b0478b41338580ff4cd4285551ce0b3dcaff1a96e974bf391d739d9403f32602` |
+| **Final** `:native-final` (full image; Final upload 993712) | `sha256:44f825eb7b8a5e0276baea84aafe3c344bdbb927500dac2a6ac0782e05e93487` |
 
 sub8, sub12, sub14, sub15 and sub19b exist as local images only at the time of writing.
 
@@ -325,7 +329,7 @@ sub8, sub12, sub14, sub15 and sub19b exist as local images only at the time of w
 | Cycles / instructions per event | User-mode CPU cycles / instructions spent inside `t3_simulate`, divided by trace rows |
 | ulp | Unit in the last place of a floating-point number |
 | Decision model | An external model that answers typed questions (probability, graded value, choice), used for decision routing (§4.2) |
-| sub1 … sub19b | Our successive builds. Uploaded: sub1, sub2, sub4, sub5, sub7, sub9, sub10, sub11, sub13, sub16, sub17 (two variants), and the sub16 and sub18 binaries with the helper thread off. The others were not uploaded |
+| sub1 … sub19b | Our successive builds. Uploaded: sub1, sub2, sub4, sub5, sub7, sub9, sub10, sub11, sub13, sub16, sub17 (two variants), the sub16 and sub18 binaries with the helper thread off, sub19a, and sub16t (the sub16 binary with writer threads on). The Final upload was `native-final` (§9.10). The others were not uploaded |
 | Full image / scratch image | The full image is `python:3.11-slim` with the launcher and both Python fallback layers. The scratch image holds only the static launcher (about 2.2 MB, one layer); a scenario the launcher declines exits with status 127 there (§9.7.4) |
 | Unit | One scored item of the roster: a folder with `scenario.json` (or a `scenarios/` directory for a batch unit) and `card.toml`, mounted at `/input`. Development scores 71 public units: 65 single and 6 batch |
 | Card | A unit's `card.toml`; its `requires_message_ledger` flag decides whether the ledger file is needed (§9.8.3) |

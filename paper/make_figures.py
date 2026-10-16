@@ -701,7 +701,7 @@ ax.set_ylim(-0.8, 3.0)
 ax.set_xlim(183000, 216500)
 ax.xaxis.set_major_formatter(lambda v, _: k(v))
 ax.set_xlabel("Development score (the axis does not start at zero)")
-ax.set_title("The last six uploads by engine: the helper thread's gain did not carry over")
+ax.set_title("The last six uploads by engine: one upload per point, differences within the reported noise")
 ax.grid(axis="y", visible=False)
 save(fig, "fig17_host_pairs")
 
@@ -786,7 +786,7 @@ ax.axis("off")
 # ---- A: the measured window. Widths are schematic: for a median unit our process is a small part.
 panel(ax, 0.965, "A", "What the harness times: one fresh container per unit, run once")
 arrow(ax, 0.02, 0.895, 0.98, 0.895, style="<|-|>")
-ax.text(0.50, 0.912, "container time measured by the harness; its fixed part is at most 0.47 s per unit",
+ax.text(0.50, 0.912, "container time measured by the harness; the fixed part is not known exactly (§5.12)",
         fontsize=7.8, color=INK2, ha="center", va="bottom")
 box(ax, 0.02, 0.50, 0.785, 0.875, "create container, attach GPU, start\n(fixed, the same for every team)", GRAY)
 box(ax, 0.505, 0.655, 0.785, 0.875, "our process", BLUE, bold=True, tc="white", fs=8.4)
@@ -842,10 +842,10 @@ for x0, x1 in ((0.300, 0.400), (0.660, 0.760)):
     arrow(ax, x0 + 0.006, (yc0 + yc1) / 2, x1 - 0.006, (yc0 + yc1) / 2)
     ax.text((x0 + x1) / 2, (yc0 + yc1) / 2 + 0.014, "only if it\ndeclines", fontsize=6.8, color=INK2, ha="center", va="bottom", linespacing=1.2)
 ax.plot([0.020, 0.300], [0.060, 0.060], color=BLUE, lw=1.4, solid_capstyle="butt")
-ax.text(0.020, 0.050, "scratch image (every scored build from sub7 on): this layer only.\nA declined input exits with status 127; the unit scores zero.",
+ax.text(0.020, 0.050, "scratch image (Development scores from sub7 on): this layer only.\nA declined input exits with status 127; the unit scores zero.",
         fontsize=7.0, color=INK2, va="top", linespacing=1.3)
 ax.plot([0.020, 0.980], [0.000, 0.000], color=MUTE, lw=1.4, solid_capstyle="butt")
-ax.text(0.980, 0.012, "full image (scored as sub4, sub5; used to\nvalidate every build): all three layers", fontsize=7.0, color=INK2,
+ax.text(0.980, 0.012, "full image (scored as sub4, sub5, the Final;\nused to validate every build): all three layers", fontsize=7.0, color=INK2,
         ha="right", va="bottom", linespacing=1.3)
 save(fig, "fig14_system")
 print("done")

@@ -1,0 +1,25 @@
+{
+  "n_scenarios": 3,
+  "total_events": 24751,
+  "wall_clock_sec": 2.003657378000014,
+  "events_per_sec": 12352.910368690704,
+  "peak_memory_bytes": 112283648,
+  "gpu_seconds": 0.0,
+  "per_scenario": [
+    {
+      "sub": "sub_00",
+      "n_events": 8262,
+      "trace_sha256": "12c8ad464d61ae53671b05585f1d6ac912d249f5e00ea078c58e6f888e2a499a"
+    },
+    {
+      "sub": "sub_01",
+      "n_events": 8256,
+      "trace_sha256": "c28aa4ea7b03905a5807a50db7946e7441779d1cf33177bc40a522892cd9add4"
+    },
+    {
+      "sub": "sub_02",
+      "n_events": 8233,
+      "trace_sha256": "0ecfb5b5173584e135c701bf0505c2b85bb38ec85a4ee7cc9732fb0d5167c060"
+    }
+  ]
+}

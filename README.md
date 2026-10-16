@@ -15,11 +15,13 @@ Agenthon 2026 Track 3 asks participants to make the ABIDES market simulator fast
 - **Score:** for each unit, verified events divided by the time the organizers' harness measures for the whole container, from creating it to removing it. The score is the mean over 71 public units (65 single scenarios and 6 batches). Each unit runs once in a fresh container limited to 4 CPUs and 16 GiB, with no network and a read-only file system.
 - **What this makes hard:** container start-up, parsing, simulation, Parquet encoding, hashing and exit are all inside the measured time, so a fast event loop alone is worth little. Exactness rules out any shortcut that changes a random draw, a rounding or the order of two events.
 
-The Final phase of the competition times one submission per team on the same machine, on units that are not public, five runs per unit.
+The Final phase scores one upload per team on the public units plus an unpublished number of sealed scenarios. Each unit runs five times; the unit's rate uses the median of the four runs after the first, each timed from the container's start to its exit. A single failure on any scenario is inadmissible.
 
 ## Results
 
-**Best result: 203,394 events per container-second** (build sub16), rank 10 of 50 teams on the Development (practice) board at its last reading, when the leader stood at 231,024. The starting point under this rule, a native engine behind the reference packaging, scored 153,825. In the simulation loop alone, which an earlier scoring rule measured, the engine reported 8.34 million events per second against 4,862 for the unmodified Python reference.
+**Final result: 1,755,232.6496 events per second** (upload 993712) on the Final metric: start-to-exit window, median of four counted runs per unit, public plus sealed scenarios. The run summary listed no problems. The rank is unknown until the organizers publish the results. The score is not comparable with Development scores, because the Final window leaves out about 0.46 s per unit of container creation and removal.
+
+**Best Development result: 203,394 events per container-second** (build sub16), rank 10 of 50 teams on the Development (practice) board at its last reading, when the leader stood at 231,024. The starting point under this rule, a native engine behind the reference packaging, scored 153,825. In the simulation loop alone, which an earlier scoring rule measured, the engine reported 8.34 million events per second against 4,862 for the unmodified Python reference.
 
 The best solution in brief (sub16):
 
@@ -30,8 +32,9 @@ The best solution in brief (sub16):
 - **An own Parquet writer** emits dictionary and delta-encoded columns straight from the engine's records, on two to four threads, with a built-in SHA-256.
 - **No unneeded output.** The message ledger is skipped on units whose card does not require it.
 - **A profile-guided build,** trained on the public scenarios.
+- **In the Final image, an exact fallback:** the same binary sits in the full image, and a scenario the launcher declines is run by the reference Python stack.
 
-Every scored upload, in order:
+Every scored Development upload, in order:
 
 | Build | What changed | Score |
 |---|---|---:|
@@ -48,13 +51,24 @@ Every scored upload, in order:
 | sub16, helper off | The sub16 binary with its latency helper thread switched off, to measure it | 185,818 |
 | sub18, helper off | Leaner engine (compact trace rows, less bookkeeping), helper thread off | 193,962 |
 | sub19a | sub18's engine with sub16's helper-thread code | 199,058 |
+| sub16t | The sub16 binary with writer threads on; last Development upload | below sub16 |
 
 What the scores established:
 
 - **Output, not simulation, was the first bottleneck.** In sub4 the event loop was 7–15% of a unit's process time and Parquet encoding through Arrow 50–63%. Replacing it raised the score by 18%.
-- **A helper thread that draws latencies ahead of the event loop is worth 9.5%** on sub16's engine (same binary, one setting apart), but only 2.6% on the faster sub18 engine. The two gains did not add up, and why is not established.
-- **Laptop timings did not predict the scoring host.** They gave the wrong sign for four of nine steps between scored builds. Uploads that change one setting were the only reliable instrument.
+- **A helper thread that draws latencies ahead of the event loop is worth 9.5%** on sub16's engine (same binary, one setting apart), but only 2.6% on the faster sub18 engine. Each figure rests on single uploads. The two gains did not add up, and why is not established.
+- **Laptop timings did not predict the scoring host.** They gave the wrong sign for four of nine steps between scored builds. Uploads that change one setting were the only measurements from the scoring host.
+- **Single uploads were noisier than assumed.** Another team saw identical images score up to 14% apart on the Development board. Differences of a few percent between our uploads are therefore weak evidence.
 - **The gap to the leader is not explained.** No model of fixed container cost plus process time fits our own scores, and the host returns one number per upload with no per-unit detail.
+
+The Final build:
+
+- **What it is:** sub16's engine, launcher and Parquet writer in the full image with the exact Python fallback, with the same settings as the 203,394 run (huge pages, buffer pre-population and writer threads off).
+- **Why the full image:** correctness on sealed scenarios is all or nothing, and in the scratch image a declined input exits as a crash; in the full image it goes to Python.
+- **Fix 1, deterministic hand-over:** the helper thread could flag rounding-sensitive latency draws the run never used, so the decision to hand a scenario to Python could depend on thread timing. It now counts only draws the event loop consumed.
+- **Fix 2, read-only root:** the last-resort ABIDES path wrote its log under `./log` and crashed on the read-only root. It now writes it under `/tmp`.
+- **Image:** `slashalpha/agenthon-track3:native-final`, digest `sha256:44f825eb7b8a5e0276baea84aafe3c344bdbb927500dac2a6ac0782e05e93487`.
+- **Validation:** output byte-identical to the sub16 binary on all 65 single units; tables, repeat-run bytes and regression suite 65 of 65; batch 6 of 6; fuzz replay 1,318 of 1,318; forced fallback and forced reference path pass under the Final's restrictions.
 
 Correctness is checked before speed on every build:
 
@@ -136,9 +150,9 @@ python docs/report_src/assemble_1.py && python docs/report_src/assemble_2.py   #
 - **Scope:** only the scenario features used by the Track 3 benchmark are implemented natively. Anything else is declined and handled by the reference stack.
 - **Timing:** all local timings come from one laptop under Docker Desktop and are noisy. Leaderboard scores are the only measurements from the scoring host, and they come without per-unit detail.
 - **Floating point:** the launcher derives one latency parameter with glibc's `log` where the reference uses NumPy's. A guard declines any run in which the difference could change a rounding; it has not been tested on AVX-512 hardware by us.
-- **Declined inputs:** the launcher hands a scenario it is not certain about to the reference stack. The scratch images used for scoring have no reference stack, so such a scenario fails there. None of the 71 public units is declined.
+- **Declined inputs:** the launcher hands a scenario it is not certain about to the reference stack. The Final image carries that stack. The scratch images scored in Development did not, so such a scenario would have failed there. None of the 71 public units is declined.
 - **Byte identity:** outputs equal the reference as tables. The Parquet files themselves are not byte-identical to the reference's.
-- **Status:** these are Development-phase results. The competition's Final phase had not been run when this was written.
+- **Status:** the Final has run and its score is reported above. The organizers' verification and the publication of results and ranks are pending.
 
 ## Licence and attribution
 

@@ -1,6 +1,6 @@
 ### 9.7 After sub5: review, research, sub7 → sub9
 
-This section records everything done after sub5 was scored. It keeps its own experiment, hypothesis and failure tables (numbered on from §10 and §15) so that the record of these two days is in one place.
+This section records everything done after sub5 was scored. It keeps its own experiment, hypothesis and failure tables (numbered on from §10 and §15) so that the record of this section is in one place.
 
 #### 9.7.1 Self-review and fix list
 
@@ -10,7 +10,7 @@ After the sub5 score the whole project was reviewed critically (rating given: 5.
 |---|---|---|
 | 1 | Days were spent on the engine while the Parquet encoder dominated; sub4 was shipped without profiling the whole process | Acknowledged; §16.8 |
 | 2 | The timing harness had not been read | Read: `throughput/run_unit.py` builds `docker run --rm --cidfile … --network=none --cpus=N --memory=M [--gpus … -e NVIDIA_DRIVER_CAPABILITIES=…] -v in:/input:ro -v out:/output IMAGE simulate …` and `timer.py` times the whole subprocess with `time.monotonic` |
-| 3 | The "output size costs time" theory was weak (`/output` is a bind mount; nothing in the public harness touches the files inside the timed window) | Later not supported by the sub7 score (§9.7.6) |
+| 3 | The "output size costs time" theory was weak (`/output` is a bind mount; nothing in the public harness touches the files inside the timed window) | Not tested in isolation; the sub7 score (§9.7.6) is one bundled upload inside the reported noise and neither supports nor rules it out |
 | 4 | The fitted ceiling was below the leader's score | Still unexplained |
 | 5 | No per-unit data from the platform | A route was found (`…/api/submissions/<id>/get_details/` → `detailed_result`); the team reports "Program logs are withheld from participant output". Not obtained |
 | 6 | No native Linux measurement | Not fixed |
@@ -66,7 +66,7 @@ Pushed as `slashalpha/agenthon-track3:native-v7s`, `sha256:2b97366d097cf6a68e6ae
 
 Upload finished with **184,857.7235** (the submission number ends in 70091; "Program logs are withheld from participant output"). Against sub5's 181,495.89 that is **+1.85%**, and this step also contains sub6's and sub7's process-time changes. Estimates given before the upload: 183–190K if image shape did not matter, 200–225K if it did. The result is in the first range. With the board fetched earlier that day the score would be 9th (above 184,047); the board was not re-fetched.
 
-What this rules out for our case: image size, layer count and the absence of system libraries as a major term of the fixed cost, and output size as a major term (sub7's files are 5.6× smaller than sub5's).
+What this does and does not show: at the time we read it as ruling out image size, layer count, the absence of system libraries and output size (sub7's files are 5.6× smaller than sub5's) as major terms of the fixed cost. That reading is **not established**. It rests on one upload per side, and the pair bundled the image change with sub6's and sub7's output-encoding and process-time changes, so a gain from one could hide a loss from another; +1.85% lies within the noise later reported between identical images (§9.10.2). The full image's timing on the host was never measured. The choice of the full image for the Final (§9.10.4) was a risk decision (all-or-nothing correctness on sealed scenarios), not a measured one.
 
 #### 9.7.7 sub8: memory
 
@@ -112,45 +112,15 @@ Neither sub8 nor sub9 has been pushed or scored. In the fitted model each is wor
 
 *(Superseded later: sub9's full validation passed (`lab/bench/validate_sub9.log`: tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65 passed, fuzz replay 1,318 of 1,318 with 1,296 handled by the launcher and 22 handed to the Python path), and its scratch image scored 183,419.75 (§9.8.2). sub8 was never uploaded.)*
 
-#### 9.7.9 Experiments of these two days
+#### 9.7.9 Experiments of this section
 
-| ID | Experiment | Result | Decision |
-|---|---|---|---|
-| E66 | Read the public timing harness | `docker run --rm` timed as a whole; GPU flags on units that declare a GPU; `/output` bind mount | Output-size theory downgraded |
-| E67 | Replay 1,318 stored fuzz cases on sub6 | 1,318 OK; launcher declined 960 | Led to E68 |
-| E68 | Histogram of decline reasons | 941 float-typed whole numbers, 19 non-boolean flag | `as_int` mirrors `int()` |
-| E69 | Ledger encoded from records; faster packer; async pre-fault; two-thread trace merge | 65/65 tables; speed vs sub6 not resolvable | First two kept; last two off by default after E71 |
-| E70 | A/B of the switches while the fuzz replay was running | Spread of 30% between identical runs | Discarded |
-| E71 | A/B of the switches on a quiet machine (4 units × 9 rounds) | No variant clearly better; sums 920–1,013 ms | Conservative defaults |
-| E72 | CPU-quota throttling check | 0 throttled periods on 4 units | Thread counts left as they are |
-| E73 | Scratch image: 65 + 6 under the full restriction set | All exit 0, tables identical | Pushed on request |
-| E74 | Four parallel agents | §9.7.5 | Scratch upload; memory work |
-| E75 | Decision round 5 | Upload first 0.64; fuse 0.92 | Followed |
-| E76 | Upload of the scratch image | 184,857.72 (+1.85%) | Image shape and output size are minor |
-| E77 | Resource survey | System time ≈ user time; buffers at most 58–68% used | sub8 |
-| E78 | First `\u` fix (decline) | 6 of 65 public units declined | Replaced by decoding |
-| E79 | sub8 | −48% faults; −12.5% process time; fully validated | Built |
-| E80 | sub9 | −34% further faults; −12.1% process time; 65/65 tables | Built and fully validated (tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318/1,318); not pushed |
-| E81 | Figures and Zenodo report | `paper/` | — |
+The experiments of this section are E66 to E81 in §10.
 
-#### 9.7.10 Hypotheses of these two days
+#### 9.7.10 Hypotheses of this section
 
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H44 | The rewritten engine (sub4 onward) still reproduces the fuzz corpus | E67 | **Confirmed**, 1,318/1,318 |
-| H45 | The launcher handles most inputs itself | E67, E68 | **Refuted** for the corpus (27%); 98.3% after the fix |
-| H46 | Part of the fixed container cost depends on image shape | E76 | **Refuted as a major effect** (+1.85% including other changes) |
-| H47 | Output size costs container time on the scoring host | E76 | **Not supported** |
-| H48 | Asynchronous pre-faulting helps | E71 | **Not shown**; inside noise |
-| H49 | A two-thread trace merge helps | E71 | **Not shown**; inside noise |
-| H50 | Our threads are throttled by the CPU quota | E72 | **Refuted** on the units checked |
-| H51 | Memory handling dominates remaining process time | E77, E79, E80 | **Confirmed**: halving faults twice gave −12.5% and −12.1% |
-| H52 | numpy's `log` on the Final's CPU type is within the guard's 16-ulp margin | Documentation found by the literature agent (about 1 ulp) | **Supported, not measured** |
-| H53 | 240,000 is reachable before the Development deadline | Model; decision model 0.31 | **Open; doubtful** |
+The hypotheses of this section are H44 to H53 in §15, which holds the current status of each. *(H51 was then tested on the scoring host by one upload per side, which showed no gain; within the reported noise, so not established either way: §9.8.2.)*
 
-*(The current status of every hypothesis is in §15. H51 was refuted for the scoring host the next day: §9.8.2.)*
-
-#### 9.7.11 Failures of these two days
+#### 9.7.11 Failures of this section
 
 | Failure | Cause | Resolution |
 |---|---|---|

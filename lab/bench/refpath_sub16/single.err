@@ -1,0 +1,34 @@
+t3launch: using the Python path (reference path forced)
+t3native: falling back to ABIDES reference (Unsupported: reference path forced)
+/usr/local/lib/python3.11/site-packages/abides_markets/agents/trading_agent.py:790: UserWarning: Execution received for order not in orders list: (Agent 4 @ 2021-02-05 09:30:01) : ASK 1 ABM @ $1000.03 (filled @ $1000.03)
+  warnings.warn(f"Execution received for order not in orders list: {order}")
+/usr/local/lib/python3.11/site-packages/abides_markets/agents/trading_agent.py:790: UserWarning: Execution received for order not in orders list: (Agent 4 @ 2021-02-05 09:30:07) : BID 5 ABM @ $999.96 (filled @ $999.96)
+  warnings.warn(f"Execution received for order not in orders list: {order}")
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/opt/t3native/cli.py", line 35, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/opt/t3native/cli.py", line 30, in main
+    print(json.dumps(simulate(args.config, args.out, args.seed)))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/t3native/cli.py", line 20, in simulate
+    return reference_simulate(config, out, seed)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/abides_fork/simulate.py", line 67, in simulate
+    end_state = abides.run(config)
+                ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/abides_core/abides.py", line 59, in run
+    end_state = kernel.run()
+                ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/abides_core/kernel.py", line 242, in run
+    return self.terminate()
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/abides_core/kernel.py", line 565, in terminate
+    self.write_summary_log()
+  File "/usr/local/lib/python3.11/site-packages/abides_core/kernel.py", line 899, in write_summary_log
+    os.makedirs(path)
+  File "<frozen os>", line 215, in makedirs
+  File "<frozen os>", line 225, in makedirs
+OSError: [Errno 30] Read-only file system: './log'

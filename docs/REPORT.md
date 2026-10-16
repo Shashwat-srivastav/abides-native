@@ -5,7 +5,7 @@
 **Ranked metric:** events/sec, gated on exact semantics
 The previous version is kept as `docs/report_src/REPORT_v1.md`. A shorter, illustrated version for publication is in `paper/` (`zenodo_report.pdf`, built by `paper/make_figures.py` and `paper/build_report.py`).
 
-This document records what we built, why each decision was made, every measured result (including the experiments that failed), what was investigated and what it explained, the hypotheses tested and their outcomes, the limitations, and exactly how to reproduce the results. Every number comes from a run in this project; anything not measured or not yet done is labelled as such. The reproduction kit lives in [`repro/`](repro/) and is described step by step in **§12**.
+This document records what we built, why each decision was made, every measured result (including the experiments that failed), what was investigated and what it explained, the hypotheses tested and their outcomes, the limitations, and exactly how to reproduce the results. Numbers come from runs in this project, except where a source is named: the organizers' statements and calibration, other teams' reports, and the decision model's probabilities. One result has no number: sub16t's score was not recorded (§9.10.1). Anything not measured or not yet done is labelled as such. The reproduction kit lives in [`repro/`](repro/) and is described step by step in **§12**.
 
 ---
 
@@ -20,7 +20,7 @@ This document records what we built, why each decision was made, every measured 
 6. [Phase A: exact speedups inside Python ABIDES](#6-phase-a-exact-speedups-inside-python-abides)
 7. [Phase B: the bit-exact native engine](#7-phase-b-the-bit-exact-native-engine) (7.7 engine rewrite, 7.8 no-Python launcher, 7.9 built-in Parquet writer)
 8. [Robustness: differential fuzzing](#8-robustness-differential-fuzzing)
-9. [Submission rounds: sub1 → sub19](#9-submission-rounds-sub1--sub19) (9.7: after sub5 was scored, sub7 to sub9; 9.8: sub9 to sub13 on the host, sub14 to sub16 built; 9.9: sub16 on the host, sub17, sub18, sub19 and five more scores)
+9. [Submission rounds: sub1 to the Final](#9-submission-rounds-sub1-to-the-final) (9.1–9.3: sub1 to sub3 under the old rule; 9.4–9.6: sub4 to sub6 under the new rule; 9.7: after sub5 was scored, sub7 to sub9; 9.8: sub9 to sub13 on the host, sub14 to sub16 built; 9.9: sub16 on the host, sub17, sub18, sub19 and five more scores; 9.10: the last Development upload and the Final)
 10. [Complete experiment log](#10-complete-experiment-log)
 11. [Limitations, risks and open work](#11-limitations-risks-and-open-work)
 12. [Reproduction guide](#12-reproduction-guide)
@@ -34,62 +34,50 @@ This document records what we built, why each decision was made, every measured 
 
 ## 0. Read this first: status
 
-**Where things stand** (details and sources in §9.9):
+### 0.1 Current status (after the Final)
 
-- **Best score: 203,394.4709** (sub16, scratch image `native-v16m`, upload 975649). It is +7.6% over the previous best, sub11's 189,018.28. **Board position: rank 10 of 50 teams**. The leader (fuzz) is at 231,024.2407 and nine teams are above 206,000. The board keeps a team's best score.
-- **Five more uploads, none above sub16:** sub19a (sub18's engine with sub16's helper code) 199,057.7311; sub17 without writer threads 196,164.8389; sub17 with writer threads 199,285.2183; the sub16 binary with the latency helper thread switched off 185,818.3472; the sub18 binary with the helper off 193,962.2805.
-- **What those scores established** (§9.9.8): the latency helper thread is worth +9.5% on the host (same binary, one environment variable); sub18's engine is 4.4% better than sub16's at equal helper setting; writer threads during the run gained 1.6% on sub17; sub17 lost 3.6% against sub16 although its engine is better, and by elimination the cause is its changed helper start-up. The mechanism is not established.
-- **The combination the scores pointed to did not beat sub16: sub19a**, sub18's engine with sub16's helper code restored. It is byte-identical to sub16's output on 65/65 single units and has passed the full validation: tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318 of 1,318 (1,296 through the launcher, 22 handed to the Python path). Its scratch image is binary-identical to the validated build, passed its own checks and is pushed as `native-v19a`. It scored **199,057.7311** (upload 977400), 2.1% below sub16: the helper code that is worth 9.5% on sub16's engine is worth 2.6% on sub18's (193,962 → 199,058), so the two gains did not add up (§9.9.16). sub19b (the same with the older, branching heap step) passed the full validation in its full image and was never uploaded.
-- **Upload budget: 5 per day and 23 per person in total** (read from the public CodaBench competition API). 22 are used. **One upload remains.** The total of 20 used in §9.8 came from a toolkit document and was wrong.
-- **The host, as the organizers describe it** (§9.9.2): Track 3 Development runs on a single machine that takes only Track 3 runs, one submission at a time, and it is the machine the Final is timed on. The Final gives five runs per unit (a warm-up and four counted), 300 s per run, 4 CPUs, 16 GiB.
-- **Measurement** (§9.9.3): the unit folders on this laptop are a slow Windows mount, so every "whole process" figure taken from them since sub4 includes 10–20 ms per run that the host does not have. Hardware counters on one thread are now the local instrument. Laptop timing did not predict the host: three score projections made from it were all wrong (§9.9.8).
-- **A correctness finding whose fix has not shipped** (§9.9.10): the number of fuzz cases handed to the Python path varies between runs (23, 25, 27). In a scratch image such a case would exit with an error and the unit would score zero. No public unit is affected. A fix is in the source only and has not been fuzz-replayed.
+Details and sources are in §9.9 and §9.10.
 
-**Open decisions:**
+- **The Final is submitted and scored: 1,755,232.6496** (upload 993712, status Finished; events per second under the Final metric). The run summary listed no problems; it shows no per-unit outcomes, so this is not a unit-by-unit proof that every sealed scenario passed. The Final board is hidden until results are published: **no rank is known**. The Final score is not comparable with Development scores, because the Final times a different window (about 0.46 s per unit less, §9.10.2).
+- **The Final image:** `slashalpha/agenthon-track3:native-final`, `sha256:44f825eb7b8a5e0276baea84aafe3c344bdbb927500dac2a6ac0782e05e93487`. It is sub16's engine, launcher and writer with two fixes found while preparing the Final (the last-resort ABIDES path crashed on the read-only root; the hand-over decision could depend on thread timing), in the full image with the exact Python fallback, with the memory and writer settings of the 203,394 run (§9.10.3, §9.10.4). It passed the full validation, including a fuzz replay of 1,318 of 1,318 and the forced reference path under the Final's restrictions. Choosing the full image over the scratch image was a risk decision, not a measured one: correctness on the sealed scenarios is all-or-nothing, and in a scratch image a scenario the launcher declines scores zero. The full image's timing on the host was never measured. Decision round 8 chose it with probability 0.97.
+- **Best Development score: 203,394.4709** (sub16, scratch image `native-v16m`, upload 975649), **rank 10 of 50 teams** on the last board the team recorded (the board keeps a team's best score; the leader, fuzz, is at 231,024.2407; §1.1).
+- **Uploads used: all 23 Development uploads (5 per day, 23 per person, read from the CodaBench competition API) and the one Final upload.** The 23rd Development upload, sub16t (the sub16 binary with writer threads on), scored below sub16; its exact score was not recorded (§9.10.1).
+- **What remains:** the organizers' verification and the publication of results (rank, Final board), and the publication of this record. Nothing more can be uploaded.
+- **A caution on noise:** another team reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2). Every conclusion in this record that rests on one Development upload per side and a difference of a few percent is therefore **not established**; the observed scores stand. A 0.1% gap between two uploads means nothing.
 
-| Decision | State |
-|---|---|
-| The remaining upload | sub19a took the 22nd. For the last one an image of the sub16 binary with writer threads on (`T3_TRAIL=1`) was built and checked locally; not pushed or uploaded when this was written (§9.9.16) |
-| Final image: scratch (a declined scenario scores zero) or the full image with the exact Python fallback | Undecided |
-| The fix of §9.9.10 | In no image; not fuzz-replayed |
-| Fixed per-container cost on the host | Unknown; at most 0.471 s (§9.8.7). Per-unit host results were never obtained |
-
-The rest of this section is the status as it was written before sub16 was scored, kept where it is still true and corrected where it is not.
-
-**The scoring rule changed, and it changes what the earlier results mean.**
-
-- until the scoring change the Development board ranked a submission's *self-reported* events/sec for the simulation loop only, capped at 10,000,000 per unit. Sections 5–9.3 were written under that rule. Under it we went 4,862 → 4,260,093 → 8,340,072.
-- Since **the scoring change** the board ranks, per unit, the **verified event count divided by the container time measured by the organizers' harness, from creating the container to removing it, one run per unit** (§2.2). Runs made before that time are not ranked. Our 8.34M is therefore history, not a current score.
-- When sub4 was uploaded the Track 3 leader stood at **212,671**; nobody is near 10M and, with container start-up inside the measured time, nobody can be.
-- **sub4, built for the new rule, scored 153,825 (rank 9 of 17 scored teams)**; an earlier upload the same day scored 151,387 (§9.4). The leader had meanwhile moved to 231,024.
-
-- **sub5 scored 181,496**, +18% over sub4 and a little below our pre-upload estimate of 185–220K (§9.5). It replaces Arrow's Parquet encoder, which turned out to be 50–63% of each unit's process time, with a built-in writer (§7.9). On this laptop the 65 public units take 3.41 s of process time in total against sub4's 10.20 s. Fitting our overhead model to both scores gives a ceiling of about 209K, which the leader's 231,024 already exceeds, so the model is missing something; §9.5 lists the candidates (output size first). The model was later shown to be wrong (§9.8.7, §9.9.6).
-- **sub5's output files are no longer byte-identical to the reference files.** They are valid Parquet files that read back as exactly the same tables, which is what the published scorer compares; the organizers' regression harness passes 65/65. The risk this leaves is stated in §11.1.
-- **sub6** (smaller files through delta encoding; about 4% less process time than sub5) is built and validated locally and not pushed (§9.6).
-- **The asked-for 300,000** is beyond the ceiling our model gives for this scoring rule (221–324K before sub5 was scored; about 209K when fitted to both scores, a fit the leader's score contradicts), because the fixed container start/stop time is in every unit's denominator (§9.5, §16.10).
-
-- **The scratch image scored 184,858** (+1.9% over sub5). It is the sub7 program in a 2.2 MB single-layer image without Python. Image shape and output size are therefore minor factors on the scoring host (§9.7.6). The stored fuzz corpus was replayed at last: 1,318 of 1,318 cases reproduce the recorded reference (§9.7.2). sub8 and sub9 cut page faults by 66% and process time by a measured 12.5% and 12.1% (§9.7.7, §9.7.8); sub8 was never scored, and sub9 was scored later the same day (next item).
-
-- **sub9 scored 183,420, sub10 188,687 and sub11 189,018** (§9.8). The memory work of sub8 and sub9 gained nothing on the scoring host. Leaving out the message ledger on the six units whose card does not require it (sub10) gained 2.9%, about twice the estimate. Switching huge pages and up-front buffer population off (sub11) changed nothing measurable there, although it costs about 70% on the laptop.
-- **The local measurement method was wrong** (§9.8.5). The host runs each unit once in a fresh container; we had timed warm repeated runs inside one container. Timed as fresh containers, the same program is two to five times slower on the laptop with a spread as large as the mean, and the laptop's Docker VM has under 3 GB of memory. Local timings of anything related to memory or threads are not evidence about the host. Later the inputs were also found to sit on a slow mount (§9.9.3).
-- **The fitted score model of §9.5 is wrong** (§9.8.7): the leader's 231,024 requires a fixed container cost of at most 0.47 s, not the 0.55 s the fit gave.
-- **Development uploads are capped: 5 per day and 23 per person in total** (read from the CodaBench competition API). Earlier we took the total to be 20 from `toolkit-v2.5.1/docs/DEVELOPMENT-RUNTIME.md`; before that we had planned with the daily limit only.
-- **sub13** (streamed output, pooled threads, less allocation churn) **scored 184,047**, 2.6% below sub11, for reasons we could not isolate: it bundled five changes (§9.8.15). **sub14** builds the trace in its final order during the run; its validation exposed 29 fuzz cases with a negative latency that it could no longer handle natively, repaired in **sub15**, which also writes the files during the run. **sub16** puts sub15's engine behind sub11's writer, to change one thing from what was then the best-scoring build; it scored 203,394 (§9.9.4). The reading of sub13 as "a streaming writer loses" is contradicted by sub17's two scores (§9.9.8).
-- **This document now lives at `docs/REPORT.md`**; some output directories cited in earlier sections were deleted to free disk space (§9.8.11).
-
-What this means for reading the report:
+**What this means for reading the report:**
 
 | Part | Status |
 |---|---|
 | Correctness work (§7.1–7.3, §8) | Fully relevant: outputs must still match the reference exactly |
 | Simulation-loop throughput numbers (§1.3, §7.4, §9.1–9.3) | Real measurements, but of a quantity that is no longer ranked |
 | End-to-end container time (§7.6, §7.8, §7.9, §9.4–9.6) | The quantity that is ranked now |
-| "Byte-identical" in §1.2, §7, §8, §9.1–9.4, §12.4 | Applies to sub1–sub4 and to the Python paths of every image. sub5/sub6 are checked by table equality (§9.5) |
+| "Byte-identical" in §1.2, §7, §8, §9.1–9.4, §12.4 | Applies to sub1–sub4 and to the Python paths of every image. sub5 and later are checked by table equality (§9.5) |
 | "10M" goal mentioned in older sections | Obsolete |
-| Laptop whole-process times taken from the unit folders (the `fig_*.json` files and the totals of §9.8.15) | Include 10–20 ms per run of input-mount time that the host does not have (§9.9.3) |
-| "Shared host" and "busy host" as explanations of score differences (§1.1, §9.4, §9.8.2) | Written before the organizers' statement that the Track 3 host takes only Track 3 runs, one submission at a time (§9.9.2). Not established for the dates concerned |
-| Upload total of 20 (§9.8.7, §9.8.12, §9.8.14) | Wrong: 23 (§9.9.1) |
+| Conclusions from one upload per side that differ by a few percent: the helper thread's +9.5% (sub16 against sub16 helper off), sub18's engine +4.4% (helper-off pair), writer threads +1.6% (sub17 pair), sub17's −3.6% and the reading "by elimination, its helper start-up", sub19a's −2.1% and +2.6%, sub16t "below sub16", sub10's +2.9%, sub11's +0.2%, sub13's −2.6%, sub9's −0.8%, sub7's +1.85% (§9.7–§9.10, §15) | One upload per side; within the reported noise; not established. Hypotheses confirmed or refuted only by such a pair are marked **Not established (one upload per side, within the reported noise)** in §15. The larger gaps (sub16 over sub11, +7.6%; sub5 over sub4, +18%) are kept as observed, one upload per side |
+| "Image shape and output size are minor factors on the host" (§9.7.6) | Not verified: one bundled pair (sub5 → sub7, +1.85%) that also changed output encoding, inside the reported noise. The full image's timing on the host was never measured |
 | Score-model fits and projections (§9.5, §16.10, and the three projections of §9.9.8) | Refuted by scores |
+| The 0.471 s bound on the fixed per-container cost (§9.8.7) and the organizers' calibration (§9.10.2) | The calibration's 0.630–0.643 s is above the bound; the most likely reading is given once, in §9.10.2 |
+| Laptop whole-process times taken from the unit folders (the `fig_*.json` files and the totals of §9.8.15) | Include 10–20 ms per run of input-mount time that the host does not have (§9.9.3) |
+| "Shared host" and "busy host" as explanations of score differences (§1.1, §9.4, §9.8.2) | Written before the organizers' statement that the Track 3 host takes only Track 3 runs, one submission at a time (§9.9.2). Not established for the uploads concerned |
+| Upload total of 20 (§9.8.7, §9.8.12, §9.8.14) | Wrong: 23 (§9.9.1) |
+| Per-section experiment and hypothesis tables in §9.7–§9.10 | Replaced by pointers: §10 is the single experiment log and §15 the single hypothesis register, each with the latest result and status. Failure tables stay in their sections |
+| Statements that the Final had not run, that uploads remained, or that the Final image was undecided | Superseded by §9.10 |
+
+### 0.2 Earlier status, kept for the record
+
+The status as written at earlier points, condensed; each item points to where it is told in full.
+
+- **At the end of Development** six uploads after sub16 scored below it (scores in §1.1). At the time their scores were read as establishing that the latency helper thread is worth +9.5% on the host, that sub18's engine is 4.4% better than sub16's at equal helper setting, that writer threads gained 1.6% on sub17, and that sub17's 3.6% loss against sub16 was, by elimination, due to its changed helper start-up. Each of these rests on one upload per side and a difference within the reported noise: **none is established** (§9.9.8, §15). The combination those readings pointed to, **sub19a** (sub18's engine with sub16's helper code), scored 199,057.7311 (upload 977400), 2.1% below sub16; the reading that the helper code is worth 9.5% on sub16's engine but 2.6% on sub18's is likewise one upload per side and not established (§9.9.16). sub19a is byte-identical to sub16's output on 65/65 single units, passed the full validation (fuzz replay 1,318 of 1,318: 1,296 through the launcher, 22 handed to the Python path) and its scratch image passed its own checks (`native-v19a`, §9.9.9). sub19b (the older, branching heap step) passed the full validation and was never uploaded.
+- **The host, as the organizers describe it** (§9.9.2, §9.10.2): a single machine that takes only Track 3 runs, one submission at a time, also used for the Final; the Final gives five runs per unit (a warm-up and four counted), 300 s per run, 4 CPUs, 16 GiB.
+- **Local measurement** (§9.8.5, §9.9.3): the host runs each unit once in a fresh container, while we had timed warm repeated runs (fresh containers are two to five times slower on the laptop, whose Docker VM has under 3 GB of memory); the unit folders are a slow Windows mount that adds 10–20 ms per run. Hardware counters on one thread became the local instrument. Laptop timing did not predict the host: three score projections made from it were all wrong (§9.9.8).
+- **A correctness finding, fixed in the Final image** (§9.9.10, §9.10.3): the number of fuzz cases handed to the Python path varies between builds (22 to 27) and, on one build, between a full replay and a launcher-only pass (22 against 23). In a scratch image such a case exits with an error and the unit scores zero; no public unit is affected. A fix for sub18's engine stayed in the source only; a fix for sub16's engine ships in the Final image.
+- **Decisions open at the end of Development:** the last upload went to sub16t (§9.10.1); the Final image is the full image (§9.10.4); the fix above is in it; our own fixed per-container cost on the host was never measured (per-unit host results were never obtained), and the organizers' calibration is discussed in §9.10.2.
+- **The scoring change** (§2.2): until then the board ranked self-reported simulation-loop events/sec, capped at 10,000,000 per unit, and sections 5–9.3 were written under that rule (we went 4,862 → 4,260,093 → 8,340,072, now history). Since then it ranks the verified event count divided by the container time from creation to removal, one run per unit. When sub4 was uploaded the leader stood at 212,671; nobody can approach 10M under this rule.
+- **sub4 to sub6** (§9.4–§9.6): sub4 scored 153,825 (rank 9 of 17 scored teams; an earlier upload the same day scored 151,387). sub5 scored 181,496 (+18% over sub4, one upload per side; below our estimate of 185–220K) by replacing Arrow's Parquet encoder with a built-in writer (§7.9); its files are no longer byte-identical to the reference but read back as the same tables, and the organizers' regression passes 65/65 (risk in §11.1). sub6 was built and validated and never pushed. The asked-for 300,000 lies beyond the ceiling of the score model of the time (§9.5, §16.10); that model was later shown to be wrong (§9.8.7: the leader's 231,024 requires a fixed container cost of at most 0.47 s, not the fitted 0.55 s).
+- **sub7 to sub13** (§9.7, §9.8): the scratch image (sub7, 2.2 MB, no Python) scored 184,858; the stored fuzz corpus was replayed, 1,318 of 1,318 (§9.7.2). sub8 and sub9 cut page faults by 66% and laptop process time by 12.5% and 12.1%; sub9 scored 183,420, sub10 (no ledger on the six units whose card does not require it) 188,687 and sub11 (huge pages and up-front buffer population off, which costs about 70% on the laptop) 189,018. sub13 (five bundled changes) scored 184,047. The differences between these uploads are within the reported noise (§0.1). sub14 and sub15 were built locally (§9.8.9, §9.8.10); sub16 put sub15's engine behind sub11's writer and scored 203,394 (§9.9.4).
+- **Upload budget:** first planned with the daily limit only, then taken as 20 in total from `toolkit-v2.5.1/docs/DEVELOPMENT-RUNTIME.md`, and finally read as 23 per person from the competition API (§9.9.1).
+- **This document lives at `docs/REPORT.md`**; some output directories cited in earlier sections were deleted to free disk space (§9.8.11).
 
 ---
 
@@ -139,8 +127,9 @@ New rule (events ÷ whole-container time), board as fetched before our upload:
 | **sub18 (scratch), helper sleeping** | `native-v18-helper-sleeping`, `sha256:2f9c4d39…fae38ea7` | pushed, never uploaded |
 | **sub19a (scratch)**: sub18's engine with sub16's helper code (§9.9.9) | `native-v19a`, `sha256:abca67f1…53dcf434` | **199,057.7311** (upload 977400) |
 | **sub19b**: the same with the branching heap step (§9.9.9) | local full image | full validation passed (fuzz 1,318 of 1,318); no scratch image, not pushed |
+| **sub16t (scratch)**: the sub16 binary with writer threads on (`T3_TRAIL=1`, §9.10.1); the last Development upload | `native-v16t`, `sha256:b0478b41…03f32602` | below sub16; exact score not recorded |
 
-Latest board (50 teams; the board keeps a team's best score):
+Last Development board the team recorded (50 teams; the board keeps a team's best score):
 
 | Rank | Team | Score |
 |---:|---|---:|
@@ -155,7 +144,13 @@ Latest board (50 teams; the board keeps a team's best score):
 | 9 | Warkop PuteraPrakoso | 206,152.3034 |
 | **10** | **S2WISH** | **203,394.4709** |
 
-Uploads used: 22 of 23 (5 per day); one remains.
+Uploads used: all 23 Development uploads (5 per day); the last was sub16t.
+
+Final (one upload per person; public and sealed units; five runs per unit, rate from the median of the four after the warm-up, each timed `StartedAt → FinishedAt`; §9.10):
+
+| Submission | Image digest | Final score |
+|---|---|---|
+| **Final**: sub16's engine, launcher and writer with the two fixes of §9.10.3, in the full image with the exact Python fallback | `native-final`, `sha256:44f825eb…05e93487` | **1,755,232.6496** (upload 993712, Finished, no problems listed). Rank unknown until results are published. Not comparable with Development scores |
 
 Board when sub4 was scored (fetched after the upload): 1st 231,024; 2nd 212,671; 8th 181,826; **9th S2WISH 153,825**; 10th 129,722; 12th 127,556; 13th 31,733; 17th 12,081. The two uploads were made minutes apart and the team reports them as the sub4 submission; the 1.6% difference between them was read at the time as the run-to-run variation of a single run per unit on a shared host. That reading is not established: the organizers have since stated that the Track 3 host takes only Track 3 runs, one submission at a time, and a participant reports two runs agreeing to within 0.1% (§9.9.2). We made no numeric prediction for sub4 beforehand, because the container create/remove time on the organizers' host could not be measured here.
 
@@ -188,9 +183,24 @@ Correctness of the builds (§9.9), judged as sub5 and sub6 are:
 | Batch units under the runtime restrictions | 6/6 | 6/6 | 6/6 | 6/6 |
 | Organizer's regression | 65/65 | 65/65 | 65/65 | 65/65 |
 | Fuzz replay of 1,318 stored cases | crashed at 200 in the validation run (Docker "unexpected EOF"); a separate replay on the same image gave 1,318/1,318 (1,296 launcher, 22 Python path; `lab/bench/val_sub16/fuzz.log`) | 1,318/1,318 (1,293 launcher, 25 Python path) | 1,318/1,318 (1,291 launcher, 27 Python path) | 1,318/1,318 (1,296 launcher, 22 Python path) |
-| Scratch image: binary identical, batch 6/6, regression 65/65, no-ledger units 6/6 | yes (`sub16m`) | yes (`sub17n`, `sub17t`) | yes (`sub18n`, `sub18h0`) | not done when this was written |
+| Scratch image: binary identical, batch 6/6, regression 65/65, no-ledger units 6/6 | yes (`sub16m`) | yes (`sub17n`, `sub17t`) | yes (`sub18n`, `sub18h0`) | yes (`native-v19a`, §9.9.9) |
 
-sub19b is byte-identical to sub16's output on 65/65 single units and has not been validated further.
+sub19b is byte-identical to sub16's output on 65/65 single units; its full validation passed later (§9.9.16).
+
+Correctness of the Final image (`native-final`, §9.10.4):
+
+| Check | Final |
+|---|---|
+| Output against the sub16 binary, 65 single units, helper on and off | Byte-identical |
+| Tables, 65 scenarios | 65/65 |
+| Same bytes in three repeated runs | 65/65 |
+| Batch units under the runtime restrictions | 6/6 |
+| Organizer's regression | 65/65 (and again on the image with the memory settings) |
+| No-ledger units | 6/6 |
+| Fuzz replay of 1,318 stored cases | 1,318/1,318 (1,296 launcher, 22 Python path) |
+| Forced reference path under the Final's restrictions | Single unit equal to the reference tables (604 and 664 rows); batch unit completed |
+| Pushed image pulled back by digest, one unit under the restrictions | Tables equal to the reference (71,932 and 63,287 rows) |
+| Final run summary (upload 993712) | No problems listed; per-unit outcomes not shown |
 
 ### 1.3 Simulation-loop throughput (self-reported, this laptop; the old ranked quantity)
 
@@ -253,7 +263,7 @@ Measurements (§9.9.3). A system-call trace showed that the unit folders are a s
 | sub17, writer threads off | 1.627 s |
 | sub17, writer threads on | 1.348 s |
 
-In a later, slower session the same measurement gave sub16 2.228 s, sub17 (writer threads off) 2.152 s and sub18 1.876 s, so only ratios within one session mean anything. On the host the order was different: sub16 scored above both sub17 variants (§1.1).
+In a later, slower session the same measurement gave sub16 2.228 s, sub17 (writer threads off) 2.152 s and sub18 1.876 s, so only ratios within one session mean anything. On the host the order was different: sub16 scored above both sub17 variants, one upload each and within the reported noise (§0.1, §1.1).
 
 ---
 ## 2. The competition contract: what counts
@@ -289,7 +299,7 @@ We mirror this exactly with a three-call engine API: `t3_create` (untimed) → `
 
 Source: organizer post on `Agenthon-2026/track3-simulation-public` issue #2 and the README at upstream commit `bffb572` ("On the Development board your score is measured by the organizers' harness…"). Both were read directly; the leaderboard at agenthon.net was fetched the same day.
 
-| Item | Old rule (until the scoring change) | New Development rule | Planned Final |
+| Item | Old rule (until the scoring change) | New Development rule | Final (as published, §9.10.2) |
 |---|---|---|---|
 | Numerator | Self-reported `n_events` | Verified row count of the trace (batch: total over markets) | Same |
 | Denominator | Self-reported `wall_clock_sec` (our scope: the event loop) | Container time measured by the harness, **create → remove** | Docker `State.StartedAt → FinishedAt` |
@@ -297,7 +307,7 @@ Source: organizer post on `Agenthon-2026/track3-simulation-public` issue #2 and 
 | Cap | 10M per unit | None in the published scorer (not relevant at these magnitudes) | Plan value not published |
 | Self-reported rate | Ranked | Only consistency-checked (±5% of `n_events ÷ wall_clock_sec`; refused above 1e9 per market) | Same |
 | Event count | Tier-A exact | Must equal the reference **exactly on every unit, Tier B included** | Same |
-| Resources | — | 4-CPU quota (`--cpus=4`, not pinned), 16 GiB, `runc`, read-only root, 64 MiB noexec `/tmp`, uid 65534, 256 PIDs | Dedicated Xeon Platinum 8570 host, 300 s per run |
+| Resources | — | 4-CPU quota (`--cpus=4`, not pinned), 16 GiB, `runc`, read-only root, 64 MiB noexec `/tmp`, uid 65534, 256 PIDs | Same restrictions; GPU attached through CDI; a KVM virtual machine on a Xeon Platinum 8570 (20 vCPUs, one NVIDIA B200); 300 s per run |
 | Output | — | Each file and the total ≤ 256 MiB | Same |
 | Image | Interface label | Interface label; must stay pullable | Additionally no Docker `VOLUME` |
 
@@ -384,7 +394,7 @@ The decision model never overrode a failed gate or a measurement.
 
 | 4 | | Next step under the new scoring: ship the launcher / cut large-unit time / cut small-unit fixed cost / refresh the stale rules checkout; which units drive the mean; is shipping before refreshing an acceptable risk? | Values: ship 2.67, large units 1.69, small-unit cost 1.02, refresh 0.52. **First step: refresh, 47%** (ship 40%). Acceptable risk: 0.38. Mean driven by small units: 0.95 | Refreshed the checkout (unchanged scenarios), validated with the upstream harness, then pushed sub4. We did not adopt the "small units drive the mean" answer (§15, H31) | 1,349 / 157 |
 
-The first four rounds together used about 6,600 tokens; rounds 5 to 7 are in §9.7.5 and §9.9.6.
+The first four rounds together used about 6,600 tokens; rounds 5 to 8 are in §9.7.5, §9.9.6 and §9.10.4.
 
 H7 was revived later because the ~10M target made it the only viable route. It went ahead under the same hard gate, with a proven-exact RNG and differential fuzzing as safeguards.
 
@@ -803,7 +813,7 @@ Both fixes were confirmed: all 22 unique historical failures are **byte-identica
 
 ---
 
-## 9. Submission rounds: sub1 → sub19
+## 9. Submission rounds: sub1 to the Final
 
 ### 9.1 sub1 → 4,260,093
 First native submission. Correct on everything, but it paid page faults inside the timed loop, timed its own trace assembly, and under-reported batch units.
@@ -852,7 +862,7 @@ What was *not* done for sub4 before pushing: the 6 batch units were not all run 
 
 Image `slashalpha/agenthon-track3:native-v5`, `sha256:eb90d781431939ce0357290851f4b08f178dfd654d5de2e53feaefa4f117ab06` (773 MB). Contents: §7.9. The team approved the push ("lets submit sub5 in parallel"); `sub/submission.json` was updated to this digest. Building `submission.zip` and uploading are the team's steps (§12.9).
 
-**Score.** Submission 969765 finished with **181,495.8931** (CodaBench). That is +18.0% over sub4's 153,825. It is **below the 185–220K range our model gave beforehand** (the "Estimate" paragraph further down, kept as written). The board was not re-fetched after this upload, so the new rank is not recorded here; against the board fetched earlier that day the score would sit just under the then 8th place (181,826).
+**Score.** Submission 969765 finished with **181,495.8931** (CodaBench). That is +18.0% over sub4's 153,825 (one upload per side; larger than the spread reported between identical images, §9.10.2, but not repeated). It is **below the 185–220K range our model gave beforehand** (the "Estimate" paragraph further down, kept as written). The board was not re-fetched after this upload, so the new rank is not recorded here; against the board fetched earlier that day the score would sit just under the then 8th place (181,826).
 
 **Re-fit with two scores.** With sub4 = 153,825 and sub5 = 181,496 the two-parameter model has one solution: host-speed factor k = 0.50 (their host runs our process about twice as fast as this laptop) and fixed overhead 0.551 s per container. With those values the model gives sub6 = 183,095 and a zero-process-time ceiling of **208,565**.
 
@@ -865,7 +875,7 @@ Image `slashalpha/agenthon-track3:native-v5`, `sha256:eb90d781431939ce0357290851
 | The overhead is not one constant (it varies by unit, or teams with smaller images or fewer layers start faster) | Part of the "fixed" cost is ours to reduce | Image-size experiment (e.g. a much smaller runtime image) |
 | Run-to-run variation on the shared host | The two scores are each a single run; our two sub4 uploads differed by 1.6% | Re-upload the same image |
 
-*(What became of these candidates: output size and image shape were tested by the sub7 scratch upload and found to be minor (§9.7.6); the fitted model itself was shown to be wrong (§9.8.7); on run-to-run variation see the note in §9.4, which also applies to "the shared host's run-to-run variation" in the last paragraph of this section.)*
+*(What became of these candidates: output size and image shape were never isolated. The sub7 scratch upload scored 1.85% above sub5, but it was one bundled pair (it also changed the output encoding and process time), one upload per side, inside the reported noise (§9.7.6, §9.10.2); the full image's timing on the host was never measured, so neither factor is shown to be minor. The fitted model itself was shown to be wrong (§9.8.7); on run-to-run variation see the note in §9.4, which also applies to "the shared host's run-to-run variation" in the last paragraph of this section.)*
 
 Under the fitted model alone, 300,000 is out of reach; because the model is contradicted by the leader's score, that conclusion is not firm either.
 
@@ -933,7 +943,7 @@ Local image `agenthon-track3:sub6` (image ID `67e474a28959`). Validation and tim
 
 ### 9.7 After sub5: review, research, sub7 → sub9
 
-This section records everything done after sub5 was scored. It keeps its own experiment, hypothesis and failure tables (numbered on from §10 and §15) so that the record of these two days is in one place.
+This section records everything done after sub5 was scored. It keeps its own experiment, hypothesis and failure tables (numbered on from §10 and §15) so that the record of this section is in one place.
 
 #### 9.7.1 Self-review and fix list
 
@@ -943,7 +953,7 @@ After the sub5 score the whole project was reviewed critically (rating given: 5.
 |---|---|---|
 | 1 | Days were spent on the engine while the Parquet encoder dominated; sub4 was shipped without profiling the whole process | Acknowledged; §16.8 |
 | 2 | The timing harness had not been read | Read: `throughput/run_unit.py` builds `docker run --rm --cidfile … --network=none --cpus=N --memory=M [--gpus … -e NVIDIA_DRIVER_CAPABILITIES=…] -v in:/input:ro -v out:/output IMAGE simulate …` and `timer.py` times the whole subprocess with `time.monotonic` |
-| 3 | The "output size costs time" theory was weak (`/output` is a bind mount; nothing in the public harness touches the files inside the timed window) | Later not supported by the sub7 score (§9.7.6) |
+| 3 | The "output size costs time" theory was weak (`/output` is a bind mount; nothing in the public harness touches the files inside the timed window) | Not tested in isolation; the sub7 score (§9.7.6) is one bundled upload inside the reported noise and neither supports nor rules it out |
 | 4 | The fitted ceiling was below the leader's score | Still unexplained |
 | 5 | No per-unit data from the platform | A route was found (`…/api/submissions/<id>/get_details/` → `detailed_result`); the team reports "Program logs are withheld from participant output". Not obtained |
 | 6 | No native Linux measurement | Not fixed |
@@ -999,7 +1009,7 @@ Pushed as `slashalpha/agenthon-track3:native-v7s`, `sha256:2b97366d097cf6a68e6ae
 
 Upload finished with **184,857.7235** (the submission number ends in 70091; "Program logs are withheld from participant output"). Against sub5's 181,495.89 that is **+1.85%**, and this step also contains sub6's and sub7's process-time changes. Estimates given before the upload: 183–190K if image shape did not matter, 200–225K if it did. The result is in the first range. With the board fetched earlier that day the score would be 9th (above 184,047); the board was not re-fetched.
 
-What this rules out for our case: image size, layer count and the absence of system libraries as a major term of the fixed cost, and output size as a major term (sub7's files are 5.6× smaller than sub5's).
+What this does and does not show: at the time we read it as ruling out image size, layer count, the absence of system libraries and output size (sub7's files are 5.6× smaller than sub5's) as major terms of the fixed cost. That reading is **not established**. It rests on one upload per side, and the pair bundled the image change with sub6's and sub7's output-encoding and process-time changes, so a gain from one could hide a loss from another; +1.85% lies within the noise later reported between identical images (§9.10.2). The full image's timing on the host was never measured. The choice of the full image for the Final (§9.10.4) was a risk decision (all-or-nothing correctness on sealed scenarios), not a measured one.
 
 #### 9.7.7 sub8: memory
 
@@ -1045,45 +1055,15 @@ Neither sub8 nor sub9 has been pushed or scored. In the fitted model each is wor
 
 *(Superseded later: sub9's full validation passed (`lab/bench/validate_sub9.log`: tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65 passed, fuzz replay 1,318 of 1,318 with 1,296 handled by the launcher and 22 handed to the Python path), and its scratch image scored 183,419.75 (§9.8.2). sub8 was never uploaded.)*
 
-#### 9.7.9 Experiments of these two days
+#### 9.7.9 Experiments of this section
 
-| ID | Experiment | Result | Decision |
-|---|---|---|---|
-| E66 | Read the public timing harness | `docker run --rm` timed as a whole; GPU flags on units that declare a GPU; `/output` bind mount | Output-size theory downgraded |
-| E67 | Replay 1,318 stored fuzz cases on sub6 | 1,318 OK; launcher declined 960 | Led to E68 |
-| E68 | Histogram of decline reasons | 941 float-typed whole numbers, 19 non-boolean flag | `as_int` mirrors `int()` |
-| E69 | Ledger encoded from records; faster packer; async pre-fault; two-thread trace merge | 65/65 tables; speed vs sub6 not resolvable | First two kept; last two off by default after E71 |
-| E70 | A/B of the switches while the fuzz replay was running | Spread of 30% between identical runs | Discarded |
-| E71 | A/B of the switches on a quiet machine (4 units × 9 rounds) | No variant clearly better; sums 920–1,013 ms | Conservative defaults |
-| E72 | CPU-quota throttling check | 0 throttled periods on 4 units | Thread counts left as they are |
-| E73 | Scratch image: 65 + 6 under the full restriction set | All exit 0, tables identical | Pushed on request |
-| E74 | Four parallel agents | §9.7.5 | Scratch upload; memory work |
-| E75 | Decision round 5 | Upload first 0.64; fuse 0.92 | Followed |
-| E76 | Upload of the scratch image | 184,857.72 (+1.85%) | Image shape and output size are minor |
-| E77 | Resource survey | System time ≈ user time; buffers at most 58–68% used | sub8 |
-| E78 | First `\u` fix (decline) | 6 of 65 public units declined | Replaced by decoding |
-| E79 | sub8 | −48% faults; −12.5% process time; fully validated | Built |
-| E80 | sub9 | −34% further faults; −12.1% process time; 65/65 tables | Built and fully validated (tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318/1,318); not pushed |
-| E81 | Figures and Zenodo report | `paper/` | — |
+The experiments of this section are E66 to E81 in §10.
 
-#### 9.7.10 Hypotheses of these two days
+#### 9.7.10 Hypotheses of this section
 
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H44 | The rewritten engine (sub4 onward) still reproduces the fuzz corpus | E67 | **Confirmed**, 1,318/1,318 |
-| H45 | The launcher handles most inputs itself | E67, E68 | **Refuted** for the corpus (27%); 98.3% after the fix |
-| H46 | Part of the fixed container cost depends on image shape | E76 | **Refuted as a major effect** (+1.85% including other changes) |
-| H47 | Output size costs container time on the scoring host | E76 | **Not supported** |
-| H48 | Asynchronous pre-faulting helps | E71 | **Not shown**; inside noise |
-| H49 | A two-thread trace merge helps | E71 | **Not shown**; inside noise |
-| H50 | Our threads are throttled by the CPU quota | E72 | **Refuted** on the units checked |
-| H51 | Memory handling dominates remaining process time | E77, E79, E80 | **Confirmed**: halving faults twice gave −12.5% and −12.1% |
-| H52 | numpy's `log` on the Final's CPU type is within the guard's 16-ulp margin | Documentation found by the literature agent (about 1 ulp) | **Supported, not measured** |
-| H53 | 240,000 is reachable before the Development deadline | Model; decision model 0.31 | **Open; doubtful** |
+The hypotheses of this section are H44 to H53 in §15, which holds the current status of each. *(H51 was then tested on the scoring host by one upload per side, which showed no gain; within the reported noise, so not established either way: §9.8.2.)*
 
-*(The current status of every hypothesis is in §15. H51 was refuted for the scoring host the next day: §9.8.2.)*
-
-#### 9.7.11 Failures of these two days
+#### 9.7.11 Failures of this section
 
 | Failure | Cause | Resolution |
 |---|---|---|
@@ -1115,17 +1095,17 @@ Each score arrived 45 to 60 minutes after its upload.
 
 The top of the board at that point (29 teams): fuzz 231,024.24; abc123 221,088.30; Yan Su 210,016.36; Proof of Alpha 209,558.04; IMAnonymous 206,925.97. The first two were unchanged from the previous fetch; the other three had moved or appeared since. Six teams were above 200,000 a few hours later.
 
-#### 9.8.2 sub9 on the host: the memory work was worth nothing there
+#### 9.8.2 sub9 on the host: no gain observed from the memory work
 
-sub9 carried the two rounds of memory work of §9.7.7 and §9.7.8, measured locally at −12.5% and −12.1% process time. The fitted model of §9.5 predicted about 190,000. The host returned 183,420, below the 184,858 of the build without that work.
+sub9 carried the two rounds of memory work of §9.7.7 and §9.7.8, measured locally at −12.5% and −12.1% process time. The fitted model of §9.5 predicted about 190,000. The host returned 183,420, below the 184,858 of the build without that work (−0.8%).
 
-- **Size of the miss:** two identical uploads once differed by 1.6% (§9.4), so the drop of 0.8% is inside the noise. The predicted gain of about 3% is clearly absent.
+- **Size of the miss:** one upload per side; the −0.8% is within the reported noise (§9.10.2), so it is **not established** that the memory work gained nothing, or lost, on the host. What the pair does show is that the predicted gain of about 3% did not appear in this one comparison.
 - **Reading at the time:** either the host rewards process-time savings much less than modelled, or the huge-page requests and the up-front population of buffers cost time on a busy shared host that they do not cost on a fresh laptop VM.
-- **Reading after §9.8.5 and §9.8.6:** page-fault costs that dominate laptop timings barely register on the host. The laptop's "23% faster" was a property of the laptop.
+- **Reading after §9.8.5 and §9.8.6:** page-fault costs that dominate laptop timings may barely register on the host, and the laptop's "23% faster" may be a property of the laptop. This is a reading of single uploads, not an established result.
 
-*(Later note on "inside the noise", here and in §9.8.4 and §9.8.15: the 1.6% comes from two uploads that were never checked to carry the same image (§9.4). The organizers state that the host is a single machine taking only Track 3 runs, one submission at a time, and another team reports two runs agreeing to within 0.1% (§9.9.2). Differences of 0.2% to 0.8% between two of our builds may therefore be real.)*
+*(Later note on "inside the noise", here and in §9.8.3, §9.8.4, §9.8.6 and §9.8.15: at the time we took the 1.6% between our two sub4 uploads (§9.4) as the noise. Those two uploads were never checked to carry the same image. The organizers then stated that the host is a single machine taking only Track 3 runs, one submission at a time, and another team reported two runs agreeing to within 0.1% (§9.9.2); later still, another team reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2), and the organizers could not settle which is right. Every comparison in this section rests on one Development upload per side and differs by a few percent (sub7 → sub9 −0.8%, sub9 → sub10 +2.9%, sub10 → sub11 +0.2%, sub11 → sub13 −2.6%), so each is an observation within the reported noise, not an established difference.)*
 
-Hypothesis H51 of §9.7.10 ("memory handling dominates remaining process time") was confirmed on the laptop and is **refuted for the scoring host**.
+Hypothesis H51 (§15; "memory handling dominates remaining process time") was confirmed on the laptop; for the scoring host it is **not established (one upload per side, within the reported noise)**.
 
 #### 9.8.3 sub10: no message ledger where the card does not require one
 
@@ -1171,7 +1151,7 @@ The six units hold 3,321,467 of the 7,728,572 public events, and about 37% of ou
 
 *(Caveat found later: `bench_unit_dirs.py` reads the inputs from the unit folders, which on this laptop are a Windows-backed mount that adds 10 to 20 ms per run which the scoring host does not have. This applies to every whole-process figure of §9.8 that was measured from the unit folders: §9.9.3. The figures are left as measured.)*
 
-**On the host:** 188,687, +2.9% over sub9. The investigation agent had estimated +2.1K to +3.0K; the result was +5.3K. Removing real work on heavy units paid about twice what the model said.
+**On the host:** 188,687, +2.9% over sub9. The investigation agent had estimated +2.1K to +3.0K; the observed difference was +5.3K, about twice the estimate. One upload per side, within the reported noise (§9.8.2 note, §9.10.2), so neither the gain nor its size relative to the estimate is established; the ledger skip itself was accepted by the scorer (the score is valid).
 
 #### 9.8.4 sub11: profile-guided build, earlier exit, and two memory switches
 
@@ -1196,7 +1176,7 @@ So on the laptop, warm, both switches off cost about 70% on the largest unit.
 
 **Full validation of sub11:** tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318/1,318. The scratch image with both switches off (`sub11m`) has a byte-identical binary and passes official regression 65/65, batch 6/6 and the six no-ledger units.
 
-**On the host, with both switches off:** 189,018, against sub10's 188,687 (+0.2%, inside the noise). The switch that costs 70% on the laptop costs nothing measurable on the host. What this upload cannot say is whether the profile-guided build helped: a small compiler gain and a small memory loss would cancel to the same number. It bundled two things, which §9.8.7 criticises.
+**On the host, with both switches off:** 189,018, against sub10's 188,687 (+0.2%; one upload per side, within the reported noise, not established). No cost of the switches that cost 70% on the laptop was visible in this one comparison; a 0.2% gap between two uploads says nothing either way. What this upload cannot say is whether the profile-guided build helped: a small compiler gain and a small memory loss would cancel to the same number. It bundled two things, which §9.8.7 criticises.
 
 *(On "inside the noise" see the note in §9.8.2.)*
 
@@ -1237,7 +1217,9 @@ What this shows and what it does not:
 | sub9 → sub10 | Ledger not recorded or written on six heavy units | −11.9% on those units | +2.9% |
 | sub10 → sub11 | Profile-guided build, earlier exit, memory switches off | −1.9% then about +70% on the largest unit | +0.2% |
 
-The host pays for removed instructions and removed output work. It does not pay for avoided page faults, and it does not charge for restoring them.
+Every host figure is one upload per side. Only sub4 → sub5 is larger than the spread later reported between identical images; the other four lie within the reported noise (§9.10.2) and are not established.
+
+Our reading at the time was: the host pays for removed instructions and removed output work; it does not pay for avoided page faults, and it does not charge for restoring them. That pattern is consistent with these five uploads but rests on single uploads with few-percent differences, so it is a hypothesis, not an established result.
 
 #### 9.8.7 Two read-only reviews by agents
 
@@ -1254,7 +1236,7 @@ Both were forbidden to use Docker, to modify sources, or to push anything. Their
 **Second review (a deliberately harsh critique, persona of a low-latency systems engineer).**
 
 - **The fitted model of §9.5 is wrong.** The total of 7,728,572 rows over 71 units puts the score with zero process time at 108,853 ÷ c for a fixed cost of c seconds. The leader's 231,024 therefore requires c ≤ 0.471 s. More plausibly c is 0.30–0.42 s and our process runs 1.5 to 2.4 times slower on the host than the warm laptop numbers.
-- **The laptop has been contradicted by the host twice** (sub9 and sub10, in opposite directions).
+- **The laptop has been contradicted by the host twice** (sub9 and sub10, in opposite directions). (Both host results are one upload per side within the reported noise, §9.10.2.)
 - **Small units matter.** The 58 units under 100,000 rows carry 45–50% of the score, so fixed per-run milliseconds count on all of them: thread creation, allocation churn.
 - **Upload budget.** `toolkit-v2.5.1/docs/DEVELOPMENT-RUNTIME.md` caps Track 3 at **5 uploads per day and 20 in total** for the Development phase. We verified this in the document. We had been planning with the daily limit only.
 - **Scorer reading.** Tier A cards compare fills exactly and the rest as a multiset with a rank-correlation threshold; Tier B cards require the exact row count and statistical checks; the ledger is checked for self-consistency and coverage, never row by row. It found no large legitimate saving beyond the ledger skip, and it listed three things near a rule boundary that we will not do (a null trace hash, a truncated ledger, an all-null ledger column).
@@ -1347,46 +1329,11 @@ Checks so far: tables 65/65; six no-ledger units 6/6; eight repeated runs of fou
 
 #### 9.8.12 Experiments of this section
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E82 | sub9 scratch image on the host | 183,420 (−0.8% against sub7) | Memory work does not pay on the host |
-| E83 | Read the scorer and README for the ledger rule; count cards | 12 of 71 cards say `false`; 6 usable | Implement the skip |
-| E84 | sub10: six no-ledger units, skip against full | 6/6 correct; −11.9% process time on them | Validate, push |
-| E85 | sub10 on the host | 188,687 (+2.9%) | Removing real work pays about twice the model's estimate |
-| E86 | Profile-guided `-O3` build | −1.9% on six units; tables 65/65 | Keep |
-| E87 | Memory switches, warm, largest unit | Both off: +70% | Ship switched off once, as a host experiment |
-| E88 | Fresh-container timing (`lab/cold_runs.sh`) | 2–5 times slower than warm; set-up phase 33–429 ms; VM has 2.97 GB | Local memory and thread timings are not evidence about the host |
-| E89 | Throttling counters in fresh containers | `nr_throttled 0` in 6 of 6 | Quota is not the cause locally |
-| E90 | sub11 (memory switches off) on the host | 189,018 (+0.2%) | Switches cost nothing on the host; keep them off |
-| E91 | Organizers' repository checked for new commits | None since the scoring change | Rules unchanged |
-| E92 | Upload limits read in the runtime guide | 5 per day, 20 in total | Bundle validated changes; no upload for small predicted gains |
-| E93 | sub12: streaming writer | Fully validated; peak memory 92 → 88 MB | Folded into sub13 |
-| E94 | sub13: pooled threads, scratch reuse, allocator settings, thread cap, agent layout | Fully validated; uploaded | Score pending |
-| E95 | sub14: trace in final order during the run | 65/65 first time; −6.8% warm on seven units; 89 → 66 MB | Full validation |
-| E96 | sub15: writer threads during the run | Correct and byte-stable; speed not yet measured | Measure on a quiet machine, then validate |
-| E97 | Toolkit v2.4.0 against v2.5.1 descriptor sealing | Identical digests | Scripts repointed |
-
-*(Later results: E92, the total is 23, not 20 (§9.9.1); E94, sub13 scored 184,046.62 (E98); E96, see E103 and, for the host, E116 and E117.)*
+The experiments of this section are E82 to E97 in §10, which also gives their later results (E92: the total is 23 uploads, not 20, §9.9.1; E94: sub13 scored 184,046.62, E98; E96: see E103 and, for the host, E116 and E117).
 
 #### 9.8.13 Hypotheses of this section
 
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H54 | The memory work of sub8 and sub9 is worth about 3% on the host | E82 | **Refuted** (−0.8%) |
-| H55 | The scorer does not need a ledger on units whose card says so | E83, E85 | **Confirmed** in the code and by a valid score |
-| H56 | The ledger skip is worth 2–3K | E85 | **Exceeded** (+5.3K) |
-| H57 | Huge-page requests and up-front population cost time on the host | E90 | **Not supported**: switching them off changed nothing measurable |
-| H58 | Switching them off costs time on the host, as it does on the laptop | E90 | **Refuted** |
-| H59 | The CPU quota throttles our threads | E89 | **Refuted locally**; unknown on the host |
-| H60 | The fixed cost per container is about 0.55 s (§9.5) | Leader's score; second review | **Refuted**: it must be at most 0.47 s |
-| H61 | Warm best-of-N timing predicts the direction of a host score | E82, E85, E90 | **Refuted** for memory-related changes; held for removed work |
-| H62 | Per-run overheads (threads, allocation) are visible on the host | E94 | **Open** (sub13 pending) |
-| H63 | Building the trace in order during the run removes real work | E95 | **Supported locally** (−6.8% warm, −26% peak memory); host unknown |
-| H64 | Writing the files during the run is a net gain | E96 | **Open** |
-| H65 | 210,000 is reachable by the Development deadline | Second review: about 18% | **Open** |
-| H53 | 240,000 is reachable by the Development deadline | Second review: 1–2% | **Open; very doubtful** |
-
-*(The current status of every hypothesis is in §15. H64 and H68 are one hypothesis under two numbers.)*
+The hypotheses of this section are H53 and H54 to H65 in §15, which holds the current status of each. H64 and H68 are one hypothesis under two numbers.
 
 #### 9.8.14 Failures of this section
 
@@ -1405,17 +1352,17 @@ Checks so far: tables 65/65; six no-ledger units 6/6; eight repeated runs of fou
 
 #### 9.8.15 sub13's score, a gap in sub14, and a step back to sub11's writer
 
-Written at the end of the same day. It supersedes the "pending" remarks in §9.8.8, §9.8.9, §9.8.10, §9.8.12 (E94) and §9.8.13 (H62).
+Written at the end of the same day. It supersedes the "pending" remarks in §9.8.8, §9.8.9, §9.8.10, §9.8.12 and §9.8.13 (E94 in §10, H62 in §15).
 
 **sub13 scored 184,046.62** (upload 971360), 2.6% below sub11's 189,018.
 
 - It changed five things at once (§9.8.8) and went up without a timing comparison against sub11.
 - First explanation: its writer parallelises across row groups of 65,536 rows, so any file below that size is encoded on one thread, where sub11 encoded a file's columns on several.
 - The measurement taken afterwards does not support it: over the 27 units under 60,000 rows sub13 took 802 ms against sub11's 873 ms (table below).
-- The drop is 1.6 times the difference once seen between two identical uploads (§9.4). It may be partly noise.
+- The drop is one upload per side and within the reported noise (§9.10.2); it is **not established** that sub13 is slower on the host than sub11 at all.
 - **We do not know which of the five changes, if any, cost the 2.6%.**
 
-*(Later note: still not known. On the sub17 binary, writer threads during the run scored 1.6% above the same binary without them (199,285 against 196,165), so "a streaming writer loses on the host" is not a safe reading of sub13 (§9.9.8). On "partly noise" see the note in §9.8.2.)*
+*(Later note: still not known. On the sub17 binary, writer threads during the run scored 1.6% above the same binary without them (199,285 against 196,165; also one upload per side, within the reported noise), so "a streaming writer loses on the host" is not a safe reading of sub13 (§9.9.8). On the noise see the note in §9.8.2.)*
 
 **Laptop measurement of six builds** (`lab/measure_builds.sh 2 3 sub9 sub10 sub11:off sub13:off sub14:off sub15:off`: all 65 single-scenario units from their unit directories, so the launcher sees each card; two interleaved rounds of three runs; best run per unit; sub11 and later with the memory switches off, as shipped; results in `lab/bench/fig_<tag>_<round>.json`, log in `lab/bench/measure_fig.log`):
 
@@ -1467,26 +1414,9 @@ The last row says the writer threads themselves made no difference in that run; 
 
 **Figures.** `paper/make_figures.py` now covers builds through sub15 (per-unit time, totals, page faults and peak memory), marks the two figures of the first fit as refuted, and adds two: the laptop's prediction against the host's score for each step, and the bound on the fixed cost.
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E98 | sub13 on the host | 184,047 (−2.6% against sub11) | Do not build further on sub13's writer until understood |
-| E99 | Six builds, 65 units, warm (`lab/measure_builds.sh`) | Totals 3.48–3.86 s; rounds of one build differ by up to 14% | Laptop time cannot rank these builds |
-| E100 | Breakdown of sub14's fuzz replay | 29 cases fell to the reference path | Investigate before any scratch image of sub14 |
-| E101 | Reason and common feature of the 29 | Negative latency; rows out of time order | Restore exact handling |
-| E102 | `repair_trace` and file restart | 29 of 29 handled by the launcher, tables equal to sub13's | Keep |
-| E103 | sub15 with 4,096-row groups, three timing comparisons | −13.7%, +4.4%, +12.5% | Inconclusive; do not upload sub15 first |
-| E104 | sub16: sub15's engine with sub11's writer | Built | Validate; candidate for the next upload |
+The experiments of this subsection are E98 to E104 in §10 (E104, sub16, was uploaded and scored 203,394.47: E105, §9.9.4).
 
-*(E104: uploaded, 203,394.47 (E105, §9.9.4).)*
-
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H62 | Per-run overheads (threads, allocation) are visible on the host | E98 | **Not supported**: the build that removed them scored lower |
-| H66 | sub13 lost because small files are encoded on one thread | E99 | **Not supported by the laptop**; untested on the host |
-| H67 | Trace rows always arrive in time order | E100, E101 | **Refuted** for negative latencies |
-| H68 | Writer threads during the run are a net gain | E103 | **Open**; local timing contradicts itself |
-
-*(H68 was answered on the host, in favour of the writer threads on the sub17 binary: §9.9.8, §9.9.13.)*
+The hypotheses of this subsection are H62 and H66 to H68 in §15. (H68 was later tested on the host on the sub17 binary: writer threads scored 1.6% higher, one upload per side, within the reported noise, so not established: §9.9.8, §9.10.2.)
 
 | Failure | Cause | Resolution |
 |---|---|---|
@@ -1516,7 +1446,7 @@ All five uploads are scratch images on Docker Hub `slashalpha/agenthon-track3`, 
 - **Pushed, not uploaded when this was written:** `native-v19a`, `sha256:abca67f17b3558eedca6e44ec2e437ec5b9ff7ccb3121c4ad2c4879f53dcf434` (sub19a, §9.9.9).
 - **Pushed, never uploaded:** `native-v18-helper-sleeping`, `sha256:2f9c4d39a04390cb7700dfc8730746efabe3cf9bbbe64c26846235fcfae38ea7` (sub18 with its sleeping helper on).
 - **Arrival times.** Results arrived much faster than the 45 to 60 minutes of the earlier uploads. Upload 976478 read "Submitting" for a while after 976489, uploaded five minutes later, had finished; it then finished normally.
-- **Upload budget.** The competition page allows 5 uploads per day and 23 per person in total (`max_submissions_per_day: 5`, `max_submissions_per_person: 23`, read from the public CodaBench competition API). The figure of 20 in §9.8.7 and §9.8.12 (E92) came from a toolkit document and is superseded. After 976794 the team had used 21 of 23: **two uploads remained.**
+- **Upload budget.** The competition page allows 5 uploads per day and 23 per person in total (`max_submissions_per_day: 5`, `max_submissions_per_person: 23`, read from the public CodaBench competition API). The figure of 20 in §9.8.7 and §9.8.12 (E92) came from a toolkit document and is superseded. After 976794 the team had used 21 of 23: **two uploads remained.** (Both were used later, by sub19a and sub16t: §9.9.16, §9.10.1.)
 - **Board** (screenshot from the team, 50 teams): fuzz 231,024.2407; VerityLovityFalsityCruelty 222,058.1706; abc123 221,088.2954; IMAnonymous 215,963.1445; Yan Su 214,393.6369; "recently rejected" 211,718.1931; Proof of Alpha 211,712.3699; Cornfield Chase 210,201.3605; Warkop PuteraPrakoso 206,152.3034; **S2WISH 203,394.4709 (rank 10)**.
 
 #### 9.9.2 Organizer statements found
@@ -1529,7 +1459,7 @@ All from the GitHub repository `Agenthon-2026/track3-simulation-public`. The sta
 | #34 | SebastianBoehler (the issue's author) | "a fixed per-container cost of roughly half a second"; a simulator "well under 0.1 s" on most units; two runs agreeing "to within 0.1%" | A participant's report, not an organizer's. It is far tighter than the 1.6% once seen between our two sub4 uploads (§9.4) |
 | #34 | PawPol | "please keep accepting the GPU device the card attaches: don't set `NVIDIA_VISIBLE_DEVICES` in your image" | We never set it |
 | #35 | PawPol | The official runner mounts the unit's input folder at `/input` as a whole, so `/input/card.toml` is present; "writing the ledger everywhere is always safe"; batch units need a ledger for every sub-scenario whatever the card says; do not use `scenario_family` as a stand-in for the flag | Confirms the ledger skip of §9.8.3 as built: it reads the flag from `card.toml`, and `simulate-batch` never skips |
-| #24 | PawPol | The Final rehearsal was postponed. The calibration post (minimal process and `t3-eq-deterministic-baseline`, timed both create-to-remove and StartedAt-to-FinishedAt) had not been published when this was written | The fixed per-container cost on the host stays unknown |
+| #24 | PawPol | The Final rehearsal was postponed. The calibration post (minimal process and `t3-eq-deterministic-baseline`, timed both create-to-remove and StartedAt-to-FinishedAt) had not been published when this was written; it appeared during the Final (§9.10.2) | The fixed per-container cost on the host stays unknown (later published, §9.10.2) |
 | #24 | krllx (comment) | "whether the main simulation thread shares a physical core with a helper thread moves a large unit's median window by about 6%" | krllx states in issue #36 that he is team fuzz, the leader. Thread placement matters on the host at the scale of our score steps |
 | #2 | organizers | Final limits: 300 s per run, five runs per unit (a warm-up and four counted), 4 CPUs, 16 GiB, 24-hour allowance for the whole run | Final planning (§9.9.15) |
 | #20 | | An upload reading "Submitting" well over an hour is usually held for a team-claim problem; a held upload still consumes an attempt | Explains what to watch for; 976478 was not such a case |
@@ -1573,7 +1503,7 @@ sub16 measured 1.895 s in one session and 2.228 s in another. Only ratios within
 - `branch-misses:u` repeats to under 0.5%;
 - `cycles:u` repeats to 0.5–2% on a quiet machine.
 
-Every engine change of this period was judged by these counters first. They say what the simulation thread does; they say nothing about thread placement on the host, which §9.9.8 shows to be worth more than any engine change made here.
+Every engine change of this period was judged by these counters first. They say what the simulation thread does; they say nothing about thread placement on the host, which another team reports to be worth about 6% on a large unit (§9.9.2) and which our own single uploads could not measure (§9.9.8).
 
 **Where the cycles go** on the largest unit, one thread (sub17 test build):
 
@@ -1623,8 +1553,8 @@ sub16 was built (§9.8.15): the engine of sub15 (trace in final order during the
 
 - **Validation** (`lab/bench/validate_sub16.log`): tables 65/65, repeat-run bytes 65/65, batch 6/6, fallback run, official regression 65/65. **Its fuzz replay crashed at 200 of 1,318** (Docker "unexpected EOF"). A separate replay on the same image, kept in `lab/bench/val_sub16/fuzz.log`, completed with 1,318 of 1,318 (1,296 launcher, 22 Python path); this section first said it had not been repeated (§9.9.16).
 - **Scratch image** `sub16m`: binary identical to sub16, batch 6/6, official regression 65/65, no-ledger units 6/6 (`lab/bench/scratch_sub16m.log`).
-- **Uploaded** as 975649. **Score 203,394.4709**, +7.6% over sub11m.
-- **Reading.** sub16 differs from sub11 by the engine of sub14 and sub15: three post-run passes over the trace and their threads are gone. The laptop had shown 4–7% less process time for that step. The host paid far more.
+- **Uploaded** as 975649. **Score 203,394.4709**, +7.6% over sub11m (one upload per side).
+- **Reading.** sub16 differs from sub11 by the engine of sub14 and sub15: three post-run passes over the trace and their threads are gone. The laptop had shown 4–7% less process time for that step. The host score rose by more than that; with one upload per side, and identical images reported up to 14% apart (§9.10.2), how much of the +7.6% is the change is not known.
 - sub16 went up without a completed fuzz replay. sub17 and sub18, which contain its engine, replayed 1,318 of 1,318.
 
 #### 9.9.5 sub17
@@ -1671,7 +1601,7 @@ Counters, profile-guided builds, one thread (`T3_LAT_THREAD=0 T3_TRAIL=0`):
 
 **Laptop process time** (§9.9.3): sub16 1.895 s, sub17n 1.627 s, sub17t 1.348 s over the 71 units.
 
-**On the host:** sub17n 196,164.8389 and sub17t 199,285.2183. Both are below sub16m's 203,394.4709. §9.9.8 gives what that established.
+**On the host:** sub17n 196,164.8389 and sub17t 199,285.2183. Both are below sub16m's 203,394.4709. §9.9.8 gives what that does and does not establish.
 
 #### 9.9.6 Three agents and two decision rounds
 
@@ -1692,7 +1622,7 @@ Records of the three studies are under `lab/agent220/`. The agents' figures are 
 | Next work | the event queue (0.67) |
 
 - **Used:** both sub17 variants were uploaded, the engine-only one (sub17n) first. The next engine work went to the event queue (sub18's wakeup rings and blocked queues).
-- **What turned out wrong:** "helper disabled" was valued lowest (0.50). The upload with the helper disabled gave the cleanest single-variable measurement of the project (§9.9.8), although as a score it was the lowest of the day.
+- **What turned out wrong, or is not established:** "helper disabled" was valued lowest (0.50). The upload with the helper disabled became the project's only comparison of one binary with one setting changed (§9.9.8), although as a score it was the lowest of the period; with one upload per side, its difference is within the reported noise and not established.
 
 **Decision round 7** (before sub17n's score; 1,586 input and 227 output tokens).
 
@@ -1706,7 +1636,7 @@ Records of the three studies are under `lab/agent220/`. The agents' figures are 
 | Final candidate | the best-scoring build (0.69) |
 
 - **Used:** the restructuring ("lazy passive receipts", below) was not attempted. No decision on the Final image had been taken when this was written.
-- **What turned out wrong, or is untested:** sub18 with its own helper was never uploaded, so "sub18 beats sub16" has no host answer. With the helper off, sub18 beat sub16 (193,962 against 185,818).
+- **What turned out wrong, or is untested:** sub18 with its own helper was never uploaded, so "sub18 beats sub16" has no host answer. With the helper off, sub18 scored above sub16 (193,962 against 185,818, +4.4%): one upload per side; within the reported noise; not established.
 
 **Score-model agent** (`lab/agent220/model/`).
 
@@ -1714,7 +1644,7 @@ Records of the three studies are under `lab/agent220/`. The agents' figures are 
 - The smallest structure that fits needs five parameters on six points: a memory-mode factor, a new-engine factor, and a penalty of 27–41 ms per unit for builds that write incrementally. A per-write cost is inconsistent by 9–16×.
 - It predicted sub17n at 205–209K if that penalty were real, and at 189–194K if sub17's own changes cost time.
 - From sub16's score, 220K needs host process time cut by 27% (fixed cost 0.36 s) to 46% (0.44 s); 230K needs 41% to 68%.
-- **What turned out wrong:** sub17n scored 196,165, between the two predictions. The "penalty for incremental writing" reading was then contradicted by sub17t beating sub17n.
+- **What turned out wrong:** sub17n scored 196,165, between the two predictions. The "penalty for incremental writing" reading found no support in sub17t's score either: sub17t scored 1.6% above sub17n (one upload per side; within the reported noise; not established).
 - **Used:** its first result, that laptop process time does not predict our own scores. It was not heeded at once: three projections from laptop timing were still given (§9.9.8).
 
 **Open-source research agent** (`lab/agent220/osint/`).
@@ -1784,9 +1714,9 @@ A sleeping helper with the old ring is slower than a spinning one. With a ring o
 
 #### 9.9.8 The sequence of host results and what each established
 
-In the order the results were read. Each wrong reading is kept, labelled **Wrong**.
+In the order the results were read. Each wrong reading is kept, labelled **Wrong**. Every comparison below rests on one Development upload per side. Another team later reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2), so a difference of a few percent between two single uploads is within the reported noise. The readings made at the time are kept as they were made; what each actually establishes is stated with it.
 
-**1. sub16m: 203,394.** +7.6% over sub11m. Building the trace in order during the run paid far more than the laptop's 4–7% suggested.
+**1. sub16m: 203,394.** +7.6% over sub11m, one upload per side. At the time this was read as: building the trace in order during the run paid far more than the laptop's 4–7% suggested. The difference is larger than the others of this section, but it is still one upload per side.
 
 - **Wrong:** a first projection for sub17 from laptop process times: 197–205K. Then, after a refit to 203,394: 205–209K for sub17n and 209–219K for sub17t. Actual: 196,165 and 199,285. All three projections were wrong. The score-model agent had already shown that such a model does not fit (§9.9.6).
 
@@ -1796,40 +1726,40 @@ In the order the results were read. Each wrong reading is kept, labelled **Wrong
 
 **3. sub17n: 196,165.** The comparison build scored lower still.
 
-- sub17n → sub17t: +1.6%. Writer threads during the run were a small gain on this binary, not a loss. This contradicts the reading of sub13 as "a streaming writer loses" (§9.8.15).
-- sub16m → sub17n: −3.6%, although the laptop counters and process time both had sub17 ahead.
-- **Wrong:** "adding or strengthening a thread loses; removing threads wins", a pattern read from nine score steps. One counterexample was dismissed. On this pattern a 60/40 bet was made that sub16 with the helper off would score above 203,394.
+- sub17n → sub17t: +1.6%. Read at the time as: writer threads during the run were a small gain on this binary. One upload per side; within the reported noise; not established. It therefore does not contradict the reading of sub13 as "a streaming writer loses" (§9.8.15) either; neither is established.
+- sub16m → sub17n: −3.6%, although the laptop counters and process time both had sub17 ahead. One upload per side; within the reported noise; not established.
+- **Wrong:** "adding or strengthening a thread loses; removing threads wins", a pattern read from nine score steps, each of them a single upload per side. One counterexample was dismissed. On this pattern a 60/40 bet was made that sub16 with the helper off would score above 203,394.
 
 **4. sub16 with the helper off: 185,818.**
 
-- sub16m → sub16 helper off: −8.6%. Same binary, one environment variable (`lab/bench/Dockerfile.nohelper` adds `ENV T3_LAT_THREAD=0` to the scratch image without adding a layer). **The helper thread is worth +9.5% on the host.** This is the cleanest single-variable measurement of the project.
-- The 60/40 bet lost. The "threads lose" pattern is refuted for the helper thread.
+- sub16m → sub16 helper off: −8.6%. Same binary, one environment variable (`lab/bench/Dockerfile.nohelper` adds `ENV T3_LAT_THREAD=0` to the scratch image without adding a layer). Read the other way, the helper thread is worth +9.5% on this binary. This is the only comparison of the project in which one binary differs by one setting, and +9.5% is the largest of the single-upload differences of this section. It is still below the 14% spread reported for identical images: one upload per side; within the reported noise; not established.
+- The 60/40 bet lost: the score was below 203,394. The "threads lose" pattern was not supported by this score; it was never established in the first place.
 - **Not established:** the arithmetic 185,818 × 1.056 = 196,222 is close to sub17n's 196,165 and suggested that sub17's helper was not working at all on the host. The next result neither proved nor disproved that.
 
 **5. sub18 with the helper off: 193,962.**
 
-- sub16 helper off → sub18 helper off: +4.4%. sub18's engine (the branch-free heap step plus the cuts of §9.9.7) is better on the host at equal helper setting.
-- It showed only that the engine is better. It did not show whether sub17's helper works on the host.
+- sub16 helper off → sub18 helper off: +4.4%. Read at the time as: sub18's engine (the branch-free heap step plus the cuts of §9.9.7) is better on the host at equal helper setting. One upload per side; within the reported noise; not established. The laptop counters do show sub18's simulation thread doing less work (§9.9.7).
+- It said nothing about whether sub17's helper works on the host.
 
-**Summary of what the five scores established:**
+**Summary of the five scores.** Each row is one upload per side.
 
-| Comparison | Host result | Reading |
-|---|---|---|
-| sub11m 189,018 → sub16m 203,394 | +7.6% | Three post-run passes and their threads removed; worth far more than the laptop said |
-| sub16m 203,394 → sub16 helper off 185,818 | −8.6% (the helper is worth +9.5%) | The helper thread helps on the host |
-| sub16 helper off 185,818 → sub18 helper off 193,962 | +4.4% | sub18's engine is better at equal helper setting |
-| sub16m 203,394 → sub17n 196,165 | −3.6% | sub17's engine is better (previous row implies it for sub18, which contains it), yet sub17n scored lower. By elimination the cause is the changed helper start-up of sub17. **Mechanism not established** |
-| sub17n 196,165 → sub17t 199,285 | +1.6% | Writer threads during the run are a small gain on this binary |
+| Comparison | Host result | Reading at the time | Status |
+|---|---|---|---|
+| sub11m 189,018 → sub16m 203,394 | +7.6% | Three post-run passes and their threads removed; worth far more than the laptop said | Observed, one upload per side |
+| sub16m 203,394 → sub16 helper off 185,818 | −8.6% (the helper "worth +9.5%") | The helper thread helps on the host | Within the reported noise (largest such pair, below the 14% spread); not established |
+| sub16 helper off 185,818 → sub18 helper off 193,962 | +4.4% | sub18's engine is better at equal helper setting | Within the reported noise; not established |
+| sub16m 203,394 → sub17n 196,165 | −3.6% | By elimination, sub17's changed helper start-up is the cause | Within the reported noise; not established. The elimination rested on the two rows above, which are not established either |
+| sub17n 196,165 → sub17t 199,285 | +1.6% | Writer threads during the run are a small gain on this binary | Within the reported noise; not established |
 
-**A guess about the mechanism, untested.** A thread that runs from engine creation is placed by the scheduler's fork-time balancing, possibly far from the simulation thread, even on the other socket. A thread woken by the simulation thread at run start is placed near it. The krllx comment of §9.9.2 (about 6% from core sharing) shows placement effects of this size exist on the host. Nothing we measured confirms the guess.
+**A guess about the mechanism, untested.** A thread that runs from engine creation is placed by the scheduler's fork-time balancing, possibly far from the simulation thread, even on the other socket. A thread woken by the simulation thread at run start is placed near it. The krllx comment of §9.9.2 (about 6% from core sharing) shows placement effects of this size exist on the host. Nothing we measured confirms the guess, and the difference it was meant to explain is itself not established.
 
-**What follows.** The best engine (sub18) and the best helper behaviour (sub16) have not yet been scored together. sub19 is that combination.
+**What followed.** At the time the best engine (sub18) and the best helper behaviour (sub16) were read as not yet scored together, and sub19 was built as that combination. Both "best" readings rest on single uploads.
 
 #### 9.9.9 sub19a and sub19b
 
 - **What:** sub18's engine with sub16's helper code restored verbatim: started through a condition variable when the run begins, spinning when the ring is full, ring of 2^13 values, permanent inline fallback if the helper is late.
 - **sub19a** keeps the branch-free heap step. **sub19b** restores the branching one.
-- **Why:** sub16's helper start-up is the only one with a good host score. sub18's engine is the only one shown better on the host at equal helper setting. sub19b exists because the heap step has not been scored separately from the other engine changes.
+- **Why:** sub16's helper start-up is the only one with a good host score, and sub18's engine scored above sub16's at equal helper setting. Both readings rest on one upload per side and are within the reported noise (§9.9.8, §9.10.2); they were the best guide available, not established results. sub19b exists because the heap step has not been scored separately from the other engine changes.
 - **Sources:** `lab/bench/engine_sub19a.cpp`, `lab/bench/engine_sub19b.cpp`.
 - **Checked so far, both:** byte-identical to sub16's output on 65/65 single units in the dev container.
 - **sub19a full validation** (`lab/bench/validate_sub19a.log`): tables 65/65, repeat-run bytes 65/65, batch 6/6, fallback run, official regression 65/65, fuzz replay 1,318 of 1,318 (1,296 through the launcher, 22 handed to the Python path).
@@ -1839,9 +1769,9 @@ In the order the results were read. Each wrong reading is kept, labelled **Wrong
 - **sub19b:** full validation not run when this was written.
 - **Host score:** sub19a 199,057.7311 (§9.9.16); sub19b never uploaded.
 
-#### 9.9.10 The fuzz-replay breakdown varies between runs, and a fix that has not shipped
+#### 9.9.10 The fuzz-replay breakdown varies between builds and passes, and a fix that has not shipped
 
-**The finding.** The number of cases handed to the Python path is not the same in every run of the same corpus:
+**The finding.** The number of cases handed to the Python path is not the same in every run of the same corpus: it varies between builds (22 to 27 over this section and §9.10) and, on one build, between a full replay and a launcher-only pass (22 against 23 on sub19a, §9.9.16, item 4):
 
 | Run | Handled by the launcher | Handed to the Python path |
 |---|---:|---:|
@@ -1883,67 +1813,17 @@ sub19a and sub19b use sub16's helper code and so have sub16's look-ahead behavio
 
 #### 9.9.12 Experiments of this section
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E105 | sub16m on the host | 203,394.4709 (+7.6% against sub11m) | Best score; base for everything after |
-| E106 | System-call trace of the smallest unit | 9.65 ms in the first `openat` of `card.toml`; under 4 ms after the inputs were read | Time with inputs in memory (`lab/true_p.py`) |
-| E107 | True process time, 71 units, best of 5 | sub16 1.895 s; sub17n 1.627 s; sub17t 1.348 s; another session sub16 2.228 s | Compare only within one session |
-| E108 | Repeatability of hardware counters, one thread | instructions ±0.00%; branch misses under 0.5%; cycles 0.5–2% | Counters are the local instrument |
-| E109 | Branch-free `sift_down`, largest unit | Branch misses 11.59 M → 4.93–5.12 M; instructions 1,395 M → 1,324 M | Keep (sub17) |
-| E110 | Sentinel-padded heap | Instructions −2.0%; cycles within noise, slightly worse on one unit | Reverted |
-| E111 | Cycle shares and event-loop counts (`-DT3_STATS`) | Latency draws about 27.5%; `Engine::run` 21.7%; output about 20% | Recorded; decision round 6 then named the event queue as next work |
-| E112 | Helper thread on against off, laptop | Largest unit 211–220 against 257–298 ms | Helper helps on the laptop |
-| E113 | Writer threads on against off, same binary, laptop, best of 9 | Largest unit 198.3 → 175.7 ms; as06 18.7 → 13.9 ms | Ship both variants of sub17 |
-| E114 | Decision round 6 | Engine change alone first 0.44; wait 0.41; next work the event queue 0.67 | sub17n uploaded first, sub17t five minutes later |
-| E115 | sub17 full validation and two scratch variants | All stages pass; fuzz 1,318/1,318 (1,293 / 25) | Push both |
-| E116 | sub17t on the host | 199,285.2183 | Read wrongly at first (§9.9.8) |
-| E117 | sub17n on the host | 196,164.8389 (−3.6% against sub16m) | sub17's helper start-up is suspect |
-| E118 | Score-model agent | Linear model: rms residual 3.2%, max 6.3%; five parameters needed for six points | Laptop process time does not predict the score |
-| E119 | Open-source research agent | No public code from the leaders; organizer statements collected | §9.9.2 |
-| E120 | Engine-review agent | Nine ranked changes | Five implemented in sub18 |
-| E121 | Decision round 7 | Upload sub18 then restructure 0.74; attempt restructuring 0.34 | Restructuring not attempted |
-| E122 | 32-byte trace rows | Instructions 1,491.7 M → 1,470.2 M; page faults 14,654 → 12,354 | Keep; validated alone first (`validate_sub18_rows_only.log`) |
-| E123 | Own orders for market makers only; one-row buckets; no skipped-ledger record | Instructions → 1,429.0 M; branch misses 5.12 M → 4.71 M | Keep |
-| E124 | Wakeup rings and sorted blocked queues | Instructions → 1,381.5 M; branch misses 4.35 M; deep-book cycles 264.6 M → 237.8 M | Keep |
-| E125 | Sleeping helper, ring 2^13, 2^15, 2^16 | 2^13 slower than spinning; 2^15 and 2^16 not | Ring 2^15 |
-| E126 | sub18 full validation and two scratch variants | All stages pass; fuzz 1,318/1,318 (1,291 / 27) | Push both variants; upload one |
-| E127 | sub16 binary with the helper off, on the host | 185,818.3472 (−8.6%) | The helper is worth +9.5% on the host |
-| E128 | sub18 binary with the helper off, on the host | 193,962.2805 (+4.4% against E127) | sub18's engine is better on the host |
-| E129 | Upload limits read from the CodaBench competition API | 5 per day, 23 per person | 22 used after sub19a; one remains |
-| E130 | "Calibration" run of eight binary and helper combinations | Laptop 2–3 times slower than in the earlier session; rounds differ by up to 45% | Thrown away |
-| E131 | sub19a and sub19b: sub18's engine with sub16's helper | Both byte-identical to sub16 on 65/65; sub19a passed the full validation (fuzz 1,318 of 1,318) and the scratch checks | sub19a pushed as `native-v19a` and scored 199,057.7311 (E134). sub19b passed the full validation; not pushed |
-| E132 | Launcher-only fuzz pass on sub16, sub17, sub18 | 23 declined in each (19 + 4), against 25 and 27 in full replays | Explanation proposed, not confirmed |
-| E133 | Sensitivity flag raised only for consumed draws | Byte-identical 65/65, helper on and off | In the source only; not fuzz-replayed |
+The experiments of this section are E105 to E133 in §10.
 
 #### 9.9.13 Hypotheses of this section
 
-| ID | Hypothesis | Test | Outcome |
-|---|---|---|---|
-| H63 | Building the trace in order during the run removes real work (from §9.8.13) | E105 | **Confirmed on the host** (+7.6%) |
-| H68 | Writer threads during the run are a net gain (from §9.8.15) | E116, E117 | **Supported on the host for sub17** (+1.6%, one pair of scores) |
-| H69 | Laptop whole-process times from the unit folders measure the process | E106 | **Refuted**: 10–20 ms per run is the input mount |
-| H70 | "Fixed cost + k × laptop process time" predicts the host score | E118, E116, E117 | **Refuted** |
-| H71 | sub17 scores above sub16 (projections 197–205K, then 205–209K and 209–219K) | E116, E117 | **Refuted** (196,165 and 199,285) |
-| H72 | Writer threads lose on the host | E116 alone | **Wrong**; withdrawn after E117 |
-| H73 | Adding or strengthening a thread loses on the host; removing threads wins | E127 | **Refuted** for the helper thread |
-| H74 | sub16 with the helper off scores above 203,394 (held at 60/40) | E127 | **Refuted** (185,818) |
-| H75 | The latency helper thread helps on the host | E127 | **Confirmed** (+9.5%) |
-| H76 | sub18's engine is faster on the host than sub16's at equal helper setting | E128 | **Confirmed** (+4.4%) |
-| H77 | The branch-free heap step is a gain on the host | E128 (bundled with the other engine changes) | **Open**: not scored alone; sub19a against sub19b would test it |
-| H78 | sub17's helper does not work at all on the host | 185,818 × 1.056 = 196,222 against 196,165 | **Open**: neither proved nor disproved by E128 |
-| H79 | sub17n lost because a helper started at engine creation is placed far from the simulation thread | none | **Untested guess** |
-| H80 | The 25 and 27 declined fuzz cases come from helper look-ahead setting the "sensitive" flag on unused draws | E132 | **Plausible; not confirmed by a targeted test** |
-| H81 | sub18's engine with sub16's helper beats 203,394 | sub19a upload | **Refuted**: sub19a scored 199,057.7311 (§9.9.16) |
-| H65 | 210,000 is reachable by the Development deadline (from §9.8.13) | Decision round 6: 0.44 | **Open** |
-| H82 | 220,000 is reachable | Decision round 7: 0.55; score-model agent: host process time must fall 27–46% | **Open** |
-| H83 | A streaming writer loses on the host (the reading of sub13 in §9.8.15) | E116, E117 | **Contradicted**: writer threads during the run gained 1.6% on sub17 |
-| H53 | 240,000 is reachable by the Development deadline | | **Open; very doubtful** |
+The hypotheses of this section are H68 to H83 in §15, with H53, H63 and H65 carried from earlier sections.
 
 #### 9.9.14 Failures
 
 | Failure | Cause | Consequence |
 |---|---|---|
-| sub17 bundled a speculative helper change with a measured optimisation | The helper change was added "as a safeguard" with no host evidence | sub17n scored 3.6% below sub16; two uploads spent before the cause was isolated |
+| sub17 bundled a speculative helper change with a measured optimisation | The helper change was added "as a safeguard" with no host evidence | sub17n scored 3.6% below sub16 (one upload per side; within the reported noise); the two changes could not be told apart, and the cause, if any, was never isolated |
 | Three score projections given from laptop timing, all wrong | The model had been shown not to fit | The team planned around numbers that meant nothing |
 | "Writer threads lose" announced after one score | The comparison score had not arrived | Corrected an hour later |
 | A pattern read from nine scores ("threads lose") used for a 60/40 bet | One counterexample was dismissed | 185,818; one upload |
@@ -1960,25 +1840,28 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 #### 9.9.15 Open when this was written
 
 - **sub19a:** uploaded and scored after this list was written (§9.9.16). **sub19b:** validated, not uploaded.
-- **Uploads:** two of 23 remain.
-- **The fixed per-container cost on the host** is still unknown. It is bounded above by 0.471 s from the leader's score (§9.8.7). The organizers' calibration post had not appeared.
-- **Why a helper thread started at engine creation is worth less on the host than one woken at run start:** not established.
+- **Uploads:** two of 23 remain. (Later: both were used, by sub19a and sub16t; §9.9.16, §9.10.1.)
+- **The fixed per-container cost on the host** is still unknown. It is bounded above by 0.471 s from the leader's score (§9.8.7). The organizers' calibration post had not appeared. (Later: published; how it relates to that bound is in §9.10.2.)
+- **Whether a helper thread started at engine creation is worth less on the host than one woken at run start at all:** not established; the −3.6% that suggested it is one upload per side.
 - **Whether the branch-free heap step is a gain on the host by itself:** not scored separately.
 - **The fix of §9.9.10** is in no image and has not been fuzz-replayed.
-- **The Final:** one submission, the same host, sealed units, five runs per unit. Undecided: a scratch image, in which a declined scenario scores zero, or the full image with the exact Python fallback.
+- **The Final:** one submission, the same host, sealed units, five runs per unit. Undecided: a scratch image, in which a declined scenario scores zero, or the full image with the exact Python fallback. (Later: the full image was chosen, uploaded and scored, §9.10.)
 
 #### 9.9.16 After this section was written: sub19a's score and four corrections
 
-**sub19a scored 199,057.7311** (upload 977400), the 22nd of 23 uploads. One upload remains.
+**sub19a scored 199,057.7311** (upload 977400), the 22nd of 23 uploads. One upload remained; it was used for sub16t (§9.10.1).
 
-| Engine | Helper off | Helper on | Helper worth |
+Each cell is one upload:
+
+| Engine | Helper off | Helper on | Difference |
 |---|---:|---:|---:|
 | sub16 | 185,818.35 | 203,394.47 | +9.5% (same binary) |
 | sub18 | 193,962.28 | 199,057.73 (sub19a, sub16's helper code) | +2.6% |
 
-- The engine gain (+4.4% with the helper off) and the helper gain (+9.5% on sub16's engine) did not add up: sub19a is 2.1% below sub16. Had both held, the arithmetic gives 212,309; that is a product of two ratios, not a score.
-- sub19a is within 0.1% of sub17 with writer threads on (199,285.22) although it carries sub16's helper start-up. The reading of §9.9.8 that sub17 lost because of its changed helper start-up is therefore weakened: restoring the old start-up did not restore the old score. H81 is refuted.
-- A guess, untested: once the event loop is fast enough it finds the helper behind at the start of the run, and in sub16's helper code the loop then draws its own latencies for the whole run (`feed_mode = 0`, "the helper is not keeping up: stay inline for the whole run"). A faster engine would then forfeit most of the helper's benefit. No measurement separates this from other explanations.
+- Observed: sub19a is 2.1% below sub16 and 2.6% above sub18 with the helper off. Both are one upload per side; within the reported noise; not established. The +9.5% of sub16's row is the largest single-upload difference of this section and is still below the 14% spread reported for identical images (§9.10.2).
+- The expectation behind sub19 (the engine's +4.4% and the helper's +9.5% adding up, about 212,309 by arithmetic, a product of two ratios and not a score) was not met. Since neither ratio is established, this shows only that the expectation failed, not why. H81 (sub19a above 203,394): sub19a scored below it, one upload per side; within the reported noise; not established (§15).
+- What sub19a says about the reading of §9.9.8 that sub17 lost because of its changed helper start-up: nothing either way. That reading was never established (§9.9.8), and sub19a's score, one upload, cannot settle it.
+- A guess, untested: once the event loop is fast enough it finds the helper behind at the start of the run, and in sub16's helper code the loop then draws its own latencies for the whole run (`feed_mode = 0`, "the helper is not keeping up: stay inline for the whole run"). A faster engine would then forfeit most of the helper's benefit. No measurement separates this from other explanations, or from noise.
 
 **Corrections to the record above.**
 
@@ -1989,13 +1872,120 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 
 **Consequence for the Final.** After the last Development runs there is no host timing. Anything changed after that ships unmeasured, and the Final compares `trace.parquet` byte for byte across five repeats of each unit, so a hand-over decision that depends on thread timing (§9.9.10) matters more there than in Development.
 
-**The last upload, prepared and not made when this was written.** `sub16t`: the sub16 scratch image with `T3_TRAIL=1` added as an environment setting (`lab/bench/Dockerfile.trail`). Binary identical to sub16's; batch 6/6; official regression 65/65; no-ledger units 6/6; output bytes identical across three runs on the 65 single units (`lab/bench/scratch_sub16t.log`). With the setting on, the files differ in bytes from sub16's own output with it off (same tables, different page layout). Evidence for a gain: the sub17 pair only (+1.6%). No fuzz replay was run with the setting on this binary.
+**The last upload, prepared and not made when this was written** (it was made later and scored below sub16, §9.10.1). `sub16t`: the sub16 scratch image with `T3_TRAIL=1` added as an environment setting (`lab/bench/Dockerfile.trail`). Binary identical to sub16's; batch 6/6; official regression 65/65; no-ledger units 6/6; output bytes identical across three runs on the 65 single units (`lab/bench/scratch_sub16t.log`). With the setting on, the files differ in bytes from sub16's own output with it off (same tables, different page layout). Evidence for a gain: the sub17 pair only (+1.6%; one upload per side; within the reported noise; not established). No fuzz replay was run with the setting on this binary.
 
-| # | Experiment | Result | Decision |
-|---|---|---|---|
-| E134 | sub19a uploaded (977400) | 199,057.7311, −2.1% against sub16, +2.6% against sub18 with the helper off | sub16 stays the best build; H81 refuted |
-| E135 | Launcher-only pass over the stored fuzz cases on sub19a, three times | 23 declined each time (19 + 4); full replay 22 | One case unexplained |
-| E136 | sub16 binary with `T3_TRAIL=1`: scratch checks and three repeat runs | All passed; bytes stable across runs, different from the setting off | Candidate for the last upload |
+The experiments of this section are E134 to E136 in §10.
+
+### 9.10 The Final
+
+This section covers everything from the last Development upload to the Final result. Its sources are the fact sheet `lab/agent_report/facts_final.md` and the logs it cites in `lab/bench/`.
+
+#### 9.10.1 The last Development upload
+
+The last upload was `sub16t`, prepared in §9.9.16: the sub16 scratch binary with writer threads on (`T3_TRAIL=1`), pushed as `slashalpha/agenthon-track3:native-v16t`, `sha256:b0478b41338580ff4cd4285551ce0b3dcaff1a96e974bf391d739d9403f32602`. Checks before the upload: binary identical to sub16's, batch 6/6, official regression 65/65, no-ledger units 6/6, output bytes identical across three runs on the 65 single units (`lab/bench/scratch_sub16t.log`).
+
+It was the 23rd and last Development upload. **It scored below sub16**; the team reported it as "not good", and its exact score was not recorded in this record. **sub16's 203,394.4709 stays the best Development score.** The last board reading the team recorded put S2WISH at rank 10 of 50. The one pair of scores that had suggested writer threads help (sub17, +1.6%) was not repeated on sub16's binary. Both results are one upload per side; within the reported noise (§9.10.2); not established, either way.
+
+#### 9.10.2 What the organizers published about the Final
+
+From the CodaBench competition API (phase "Final & Verification"), the issue trackers and the README of the Agenthon-2026 repositories:
+
+| Topic | Statement | Consequence for us |
+|---|---|---|
+| Window and budget | The Final phase opened when Development closed and runs for about two weeks, with **one upload per person in total** and one Final upload per team. A Final upload that ends as Failed does not use the attempt; a held one does. Code may change after Development; ties go to the earlier upload | One upload and no host feedback before it: anything changed after Development ships untimed on the host |
+| What is hidden | Outputs, logs, per-unit outcomes and the Final board; results are published after the Final closes. The image must stay pullable until then | No rank and no per-unit result can be read during the window |
+| Timing | Each unit runs **five times back to back with the same seed**; the unit's rate is verified events ÷ the **median of the four runs after the warm-up**; each run is timed from `StartedAt` to `FinishedAt` (creating and removing the container are not counted) | Most of the fixed container cost that dominated Development lies outside the timed window |
+| Score | The **arithmetic mean of the unit rates** over the whole roster: the public units plus an unpublished number of **sealed scenarios** | Units with the most events weigh most |
+| Correctness | Every scenario, public and sealed, must pass ("a single failure anywhere is inadmissible"); a run that crashes, times out (300 s) or runs out of memory scores the unit 0; **all runs of a unit must write byte-identical trace and ledger files** | All or nothing: one declined input in a scratch image (exit 127) or one repeat with different bytes would be fatal |
+| Runtime | Read-only root, 64 MiB `noexec` `/tmp`, uid 65534, no network, `--cpus=4` quota (not pinned), 16 GiB, GPU attached through CDI (it cannot be opted out of) | Every fallback path must work under these restrictions, not only the launcher |
+| Calibration (issues #24 and #34) | The timing machine is a KVM virtual machine on an Intel Xeon Platinum 8570, 20 vCPUs as 10 cores × 2 threads, one NVIDIA B200. A static binary that only copies outputs takes a median **0.165–0.173 s** per Final window (runtime and GPU set-up); the same work from a Python image **0.342–0.343 s**. Create-to-remove, as the Development board counted it, was **0.630–0.643 s** for the static binary | About 0.46 s per unit lies outside the Final window. How the 0.630–0.643 s relates to the 0.471 s bound of §9.8.7 is explained below the table |
+| Noise (issue #37) | Another team reported identical images scoring up to **14% apart** on the Development board (203.0K and 219.4K; 230.9K and 202K). The organizers could not tell drift from noise in two of their own timings 26 minutes apart | See below |
+| The organizers' baseline | ABIDES writes `summary_log.bz2` under `./log/` at the end of every run, which fails on the read-only root; fixed upstream in commit `fe32378` with `log_dir="/tmp/abides"` | Our own last-resort path had the same defect (§9.10.3) |
+
+**The calibration and the 0.471 s bound.** This is the one place in this record where the two are compared; other sections point here. §9.8.7 derived a bound from the leader's Development score: over the 71 units the score with zero process time is 108,853 ÷ c for a fixed cost of c seconds per container, so the leader's 231,024 requires c ≤ 0.471 s. The organizers' calibration gives 0.630–0.643 s create-to-remove for a static binary that only copies outputs, which is above that bound. Two things separate the figures:
+
+- The calibration was taken on the organizers' Final timing path. They said that path "adds a few organizer checks inside that span", so "a Development run of the same image may come out a little lower". The 0.630–0.643 s is therefore not a measurement of Development's create-to-remove.
+- The 0.471 s bound assumes the same fixed cost on every unit. If the cost differs between units, the bound does not hold as stated.
+
+The most likely reading is that Development's create-to-remove was lower than the rehearsal's. The published figures do not settle it, and our own fixed cost per container on the host was never measured (§9.9.14).
+
+**What the 14% report means for this record.** The report in issue #37 contradicts the 0.1% agreement another participant had reported (§9.9.2), and the organizers could not settle it. Every conclusion of this record that rests on one Development upload per side and a difference of a few percent is therefore **not established**. In this section and §9.9 that covers the helper thread's +9.5% (sub16 against sub16 with the helper off; §9.9.8), sub18's engine +4.4% (the helper-off pair), the writer threads' +1.6% (the sub17 pair), sub17's −3.6% and the "by elimination, its helper start-up" reading built on it, sub19a's −2.1% and +2.6% (§9.9.16), and sub16t below sub16 (§9.10.1). The observed scores stand; the readings become: one upload per side; within the reported noise; not established. The helper's +9.5% is the largest of these pairs, and it is still below the 14% spread reported for identical images. sub16's +7.6% over sub11m is larger than the others but is also one upload per side.
+
+#### 9.10.3 Two defects found in the best image while preparing the Final
+
+**1. The last-resort ABIDES path crashed on the read-only root.** `sub/abides_fork/simulate.py` called `abides.run(config)` without `log_dir`. With the reference path forced (`T3_NO_LAUNCHER=1 T3_FORCE_REFERENCE=1`) under the Final's restrictions, the sub16 full image exited with `OSError: [Errno 30] Read-only file system: './log'` on a single unit and wrote no files (`lab/bench/refpath_sub16/single.err`; script `lab/ref_path_check.sh`). The batch path was not affected: it changes into a temporary directory, and the batch unit completed (`lab/bench/refpath_sub16/batch.out`). The scored scratch images have no Python layer, so this never affected a score; it would have affected any declined input in a full image. The organizers' own baseline had the same defect (§9.10.2). **Fix:** `abides.run(config, log_dir=tempfile.mkdtemp(prefix="abides-log-"))`, one directory per run so that parallel batch workers never share it.
+
+**2. The hand-over decision could depend on thread timing.** This is the finding of §9.9.10, now traced in the code. The helper thread computes latency draws ahead of the event loop and raised the "rounding-sensitive" flag for draws the run might never use. Launcher-only passes over the stored fuzz cases declined 23; full replays handed 22 to Python (§9.9.16, item 4). Across the five repeats of one sealed unit this could have sent one repeat to the Python path and not another: different file bytes, and a refused unit. **Fix** (`lab/bench/engine_final.cpp`, made by `amb_patch16.py` from `lab/bench/engine_sub16.cpp`): `latency_from` reports sensitivity through a flag argument; the event loop's own inline draws raise the global flag as before; the helper records only the index of the first sensitive draw it computed, and after the run that index counts only if the loop used the ring and the index is below the number of values it consumed. The source-only fix of §9.9.10 was written against sub18's engine; this one is applied to sub16's.
+
+#### 9.10.4 The Final build
+
+**What.** sub16's engine, launcher and Parquet writer (launcher and writer byte-identical to the sub16 snapshots) with the two fixes, in the **full image with the exact Python fallback**, with the environment `T3_HUGE=0 T3_PREFAULT=0 T3_TRAIL=0`: the memory settings and the writer setting of the 203,394 run. The memory settings are set by `lab/bench/Dockerfile.memoff` (`ARG BASE`, `FROM ${BASE}`, `ENV T3_HUGE=0 T3_PREFAULT=0`), which changes the image's environment and adds no layer. Locally the validated full image is tagged `final` and the image with the memory settings `finalm`.
+
+**Image:** `slashalpha/agenthon-track3:native-final`, **`sha256:44f825eb7b8a5e0276baea84aafe3c344bdbb927500dac2a6ac0782e05e93487`**, 773 MB, `linux/amd64`, interface label 2.0, no `VOLUME`, no entrypoint (the command starts the static launcher directly).
+
+**Why the full image and not the 2 MB scratch image that scored 203,394.** With all-or-nothing correctness on sealed scenarios, a declined input in a scratch image exits with status 127, which counts as a crash. In the timed window both images start the same static launcher; Python loads only for a declined input. **What the full image costs on the host was never measured**: no Development uploads were left. The earlier reading that image shape and output size are minor factors on the host (sub5 against sub7, +1.85%) is not verified either: it is one bundled pair that also changed the output encoding, one upload per side, within the reported noise (§9.10.2). The choice of the full image was therefore a risk decision, made for all-or-nothing correctness on sealed scenarios, not a measured one.
+
+**Decision round 8.** The decision model was given both sides. Its answers are judgments, not measurements:
+
+| Question | Answer |
+|---|---|
+| Which image for the Final | **Full image 0.97**; scratch as scored 0.01; a new scratch image of the fixed binary 0.02 |
+| At least one sealed scenario will be handed over to the Python path | 0.56 |
+| The full image scores more than 1% below scratch | 0.36 |
+| The full image scores more than 3% below scratch | 0.23 |
+
+Followed: the full image was validated, pushed and uploaded.
+
+**Validation** (`lab/bench/validate_final.log`, `lab/bench/checks_finalm.log`, `lab/bench/fuzz_final.log`, `lab/bench/refpath_final/`, `lab/bench/refpath_finalm/`, `lab/bench/pullcheck/`):
+
+| Check | Result |
+|---|---|
+| Output against the sub16 binary, 65 single units | Byte-identical with the helper on and with it off |
+| Tables, 65 scenarios | 65/65 |
+| Repeat-run bytes, three runs of each scenario | 65/65 |
+| Batch units under the runtime restrictions | 6/6 |
+| Single run and forced fallback (two modes) under the restrictions | All exit 0 with three files |
+| Official regression | 65/65 on `final`, and again on `finalm` |
+| `finalm` against `final` | Binary identical; batch 6/6; no-ledger units 6/6 |
+| Fuzz replay of the 1,318 stored cases | 1,318 of 1,318 (1,296 through the launcher, 22 to the Python path) |
+| Forced reference path under the Final's restrictions | One single unit: 604 and 664 rows, equal to the reference tables; one batch unit completed |
+| Pushed image pulled back by digest and run on one unit under the restrictions | Tables equal to the reference (71,932 and 63,287 rows) |
+
+**Also recorded:** sub16's fuzz replay did complete in a separate run before its upload: `lab/bench/fuzz_sub16_complete.log`, 1,318 of 1,318 (1,296/22). This agrees with the correction in §9.9.16, item 1.
+
+#### 9.10.5 The Final result
+
+**Upload 993712, status Finished, primary score 1,755,232.6496** (events per second, the Final metric). It used the one Final upload.
+
+- The run summary page lists the kinds of problems a run had; it listed none (no reason codes). It shows no unit count and no per-unit outcomes on a sealed phase. Our reading: no unit failed. This is not a unit-by-unit proof.
+- The Final board and the other teams' Final scores are hidden until results are published, so **no rank is known**.
+- **The Final score is not comparable with Development scores.** The timed window is different: about 0.46 s per unit less is counted, by the organizers' calibration (§9.10.2).
+
+#### 9.10.6 Experiments of this section
+
+The experiments of this section are E137 to E150 in §10.
+
+#### 9.10.7 Hypotheses of this section
+
+The hypotheses of this section are H84 to H90 in §15; H53, H65, H77, H80 and H82, carried from earlier sections, have their final status there too.
+
+#### 9.10.8 Failures and lessons
+
+| Failure | Cause | Consequence |
+|---|---|---|
+| The scored line's fallback paths were never tested under the runtime restrictions with the last-resort path forced | The validation's forced-fallback check (`T3_NO_LAUNCHER=1`) does not force the ABIDES reference path; that path was first run under the read-only root with `lab/ref_path_check.sh` while preparing the Final | Any declined single input in a full image would have crashed. The scored scratch images never reached that path |
+| The Final's rules were read late | The hub repository's issues and the Final phase's settings were read late (see also §9.9.16, item 3) | The choice between scratch and full image, the five-repeat byte rule and the runtime restrictions were weighed with no Development uploads left to measure anything |
+| The hand-over decision depended on thread timing for several builds | The helper's look-ahead set a global flag (§9.9.10); the source-only fix of §9.9.10 never shipped | No public unit was affected in Development; fixed before the Final, where five repeats must match |
+| Single-upload differences were read as findings | No repeat upload of one digest was ever made | The conclusions of §9.9.8 and §9.9.16 rest on one upload per side and are within the reported noise: not established (§9.10.2) |
+| sub16t's exact score was not recorded | — | Its comparison with sub16 is qualitative only |
+
+The first two lessons are one: test the image that will be scored on every path it can take, under the conditions it will run in, and read those conditions before the last uploads are spent.
+
+#### 9.10.9 Open after the Final
+
+- **Verification and publication** by the organizers: the Final board, the rank, and whether every sealed unit passed are not known until results are published.
+- The image must stay pullable by digest until then.
+- Nothing in this record measures the full image's cost against the scratch image on the host (H88).
 
 ---
 
@@ -2067,7 +2057,7 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 | E62 | `--out` given a directory (re-test of the hang seen before E47) | Launcher hands over to Python, which exits 1 with `IsADirectoryError` | Misuse, not a harness case; documented in §7.9 |
 | E63 | sub5 and sub6: one `simulate` under the restriction flags; the same with `T3_NO_LAUNCHER=1` | 4/4 runs exit 0 with correct declared hashes | — |
 | E64 | sub5 and sub6: every scenario 3 times, SHA-256 of both files compared across runs | 65/65 units byte-identical across runs, both images | Stable-output requirement of the Final met on this machine |
-| E65 | Upload sub5 | 181,496 (+18.0%); below the modelled 185–220K | Model re-fitted: k = 0.50, overhead 0.551 s, ceiling 208,565, which the leader exceeds; model incomplete (§9.5) |
+| E65 | Upload sub5 | 181,496 (+18.0% over sub4; one upload of sub5); below the modelled 185–220K | Model re-fitted: k = 0.50, overhead 0.551 s, ceiling 208,565, which the leader exceeds; model incomplete (§9.5) |
 | E66 | Read the public timing harness | `docker run --rm` timed as a whole; GPU flags on units that declare a GPU; `/output` bind mount | Output-size theory downgraded |
 | E67 | Replay 1,318 stored fuzz cases on sub6 | 1,318 OK; launcher declined 960 | Led to E68 |
 | E68 | Histogram of decline reasons | 941 float-typed whole numbers, 19 non-boolean flag | `as_int` mirrors `int()` |
@@ -2078,21 +2068,21 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 | E73 | Scratch image: 65 + 6 under the full restriction set | All exit 0, tables identical | Pushed on request |
 | E74 | Four parallel agents | §9.7.5 | Scratch upload; memory work |
 | E75 | Decision round 5 | Upload first 0.64; fuse 0.92 | Followed |
-| E76 | Upload of the scratch image | 184,857.72 (+1.85%) | Image shape and output size are minor |
+| E76 | Upload of the scratch image (sub7) | 184,857.72 (+1.85% over sub5; one upload per side, bundled with sub6's and sub7's output-encoding changes) | First read as "image shape and output size are minor"; one upload per side; within the reported noise; not established. The full image's timing on the host was never measured (§17) |
 | E77 | Resource survey | System time ≈ user time; buffers at most 58–68% used | sub8 |
 | E78 | First `\u` fix (decline) | 6 of 65 public units declined | Replaced by decoding |
 | E79 | sub8 | −48% faults; −12.5% process time; fully validated | Built |
 | E80 | sub9 | −34% further faults; −12.1% process time; 65/65 tables | Built and fully validated (tables 65/65, repeat-run bytes 65/65, batch 6/6, official regression 65/65, fuzz replay 1,318/1,318); not pushed |
 | E81 | Figures and Zenodo report | `paper/` | — |
-| E82 | sub9 scratch image on the host | 183,420 (−0.8% against sub7) | Memory work does not pay on the host |
+| E82 | sub9 scratch image on the host | 183,420 (−0.8% against sub7) | First read as "memory work does not pay on the host"; one upload per side; within the reported noise; not established. The laptop's −12.1% did not show as a gain |
 | E83 | Read the scorer and README for the ledger rule; count cards | 12 of 71 cards say `false`; 6 usable | Implement the skip |
 | E84 | sub10: six no-ledger units, skip against full | 6/6 correct; −11.9% process time on them | Validate, push |
-| E85 | sub10 on the host | 188,687 (+2.9%) | Removing real work pays about twice the model's estimate |
+| E85 | sub10 on the host | 188,687 (+2.9%) | First read as "removing real work pays about twice the model's estimate"; one upload per side; within the reported noise; not established |
 | E86 | Profile-guided `-O3` build | −1.9% on six units; tables 65/65 | Keep |
 | E87 | Memory switches, warm, largest unit | Both off: +70% | Ship switched off once, as a host experiment |
 | E88 | Fresh-container timing (`lab/cold_runs.sh`) | 2–5 times slower than warm; set-up phase 33–429 ms; VM has 2.97 GB | Local memory and thread timings are not evidence about the host |
 | E89 | Throttling counters in fresh containers | `nr_throttled 0` in 6 of 6 | Quota is not the cause locally |
-| E90 | sub11 (memory switches off) on the host | 189,018 (+0.2%) | Switches cost nothing on the host; keep them off |
+| E90 | sub11 (memory switches off) on the host | 189,018 (+0.2%) | First read as "switches cost nothing on the host"; one upload per side; within the reported noise; not established. Switches kept off |
 | E91 | Organizers' repository checked for new commits | None since the scoring change | Rules unchanged |
 | E92 | Upload limits read in the runtime guide | 5 per day, 20 in total (the toolkit document's figure; the competition page allows 23: E129) | Bundle validated changes; no upload for small predicted gains |
 | E93 | sub12: streaming writer | Fully validated; peak memory 92 → 88 MB | Folded into sub13 |
@@ -2100,14 +2090,14 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 | E95 | sub14: trace in final order during the run | 65/65 first time; −6.8% warm on seven units; 89 → 66 MB | Full validation |
 | E96 | sub15: writer threads during the run | Correct and byte-stable; speed not yet measured | Measured in E103 (laptop, inconclusive) and E116, E117 (host) |
 | E97 | Toolkit v2.4.0 against v2.5.1 descriptor sealing | Identical digests | Scripts repointed |
-| E98 | sub13 on the host | 184,047 (−2.6% against sub11) | Do not build further on sub13's writer until understood |
+| E98 | sub13 on the host | 184,047 (−2.6% against sub11) | One upload per side; within the reported noise; not established. Not built on further |
 | E99 | Six builds, 65 units, warm (`lab/measure_builds.sh`) | Totals 3.48–3.86 s; rounds of one build differ by up to 14% | Laptop time cannot rank these builds |
 | E100 | Breakdown of sub14's fuzz replay | 29 cases fell to the reference path | Investigate before any scratch image of sub14 |
 | E101 | Reason and common feature of the 29 | Negative latency; rows out of time order | Restore exact handling |
 | E102 | `repair_trace` and file restart | 29 of 29 handled by the launcher, tables equal to sub13's | Keep |
 | E103 | sub15 with 4,096-row groups, three timing comparisons | −13.7%, +4.4%, +12.5% | Inconclusive; do not upload sub15 first |
-| E104 | sub16: sub15's engine with sub11's writer | Built; validated; the fuzz replay stopped at 200 of 1,318 in the validation run and completed in a separate one (§9.9.16) | Uploaded (E105) |
-| E105 | sub16m on the host | 203,394.4709 (+7.6% against sub11m) | Best score; base for everything after |
+| E104 | sub16: sub15's engine with sub11's writer | Built; validated; the fuzz replay stopped at 200 of 1,318 in the validation run and completed in a separate one (E149) | Uploaded (E105) |
+| E105 | sub16m on the host | 203,394.4709 (+7.6% against sub11m; one upload per side) | Best Development score; base for everything after |
 | E106 | System-call trace of the smallest unit | 9.65 ms in the first `openat` of `card.toml`; under 4 ms after the inputs were read | Time with inputs in memory (`lab/true_p.py`) |
 | E107 | True process time, 71 units, best of 5 | sub16 1.895 s; sub17n 1.627 s; sub17t 1.348 s; another session sub16 2.228 s | Compare only within one session |
 | E108 | Repeatability of hardware counters, one thread | instructions ±0.00%; branch misses under 0.5%; cycles 0.5–2% | Counters are the local instrument |
@@ -2118,8 +2108,8 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 | E113 | Writer threads on against off, same binary, laptop, best of 9 | Largest unit 198.3 → 175.7 ms; as06 18.7 → 13.9 ms | Ship both variants of sub17 |
 | E114 | Decision round 6 | Engine change alone first 0.44; wait 0.41; next work the event queue 0.67 | sub17n uploaded first, sub17t five minutes later |
 | E115 | sub17 full validation and two scratch variants | All stages pass; fuzz 1,318/1,318 (1,293 / 25) | Push both |
-| E116 | sub17t on the host | 199,285.2183 | Read wrongly at first (§9.9.8) |
-| E117 | sub17n on the host | 196,164.8389 (−3.6% against sub16m) | sub17's helper start-up is suspect |
+| E116 | sub17t on the host | 199,285.2183 | First read as "writer threads lose" (§9.9.8); against E117 +1.6% for writer threads: one upload per side; within the reported noise; not established |
+| E117 | sub17n on the host | 196,164.8389 (−3.6% against sub16m) | First read as "sub17's helper start-up is suspect"; one upload per side; within the reported noise; not established |
 | E118 | Score-model agent | Linear model: rms residual 3.2%, max 6.3%; five parameters needed for six points | Laptop process time does not predict the score |
 | E119 | Open-source research agent | No public code from the leaders; organizer statements collected | §9.9.2 |
 | E120 | Engine-review agent | Nine ranked changes | Five implemented in sub18 |
@@ -2129,29 +2119,47 @@ Two further points belong with these. sub16's validation log ends with its fuzz 
 | E124 | Wakeup rings and sorted blocked queues | Instructions → 1,381.5 M; branch misses 4.35 M; deep-book cycles 264.6 M → 237.8 M | Keep |
 | E125 | Sleeping helper, ring 2^13, 2^15, 2^16 | 2^13 slower than spinning; 2^15 and 2^16 not | Ring 2^15 |
 | E126 | sub18 full validation and two scratch variants | All stages pass; fuzz 1,318/1,318 (1,291 / 27) | Push both variants; upload one |
-| E127 | sub16 binary with the helper off, on the host | 185,818.3472 (−8.6%) | The helper is worth +9.5% on the host |
-| E128 | sub18 binary with the helper off, on the host | 193,962.2805 (+4.4% against E127) | sub18's engine is better on the host |
-| E129 | Upload limits read from the CodaBench competition API | 5 per day, 23 per person | 22 used after sub19a; one remains |
+| E127 | sub16 binary with the helper off, on the host | 185,818.3472 (−8.6%) | First read as "the helper is worth +9.5% on the host"; one upload per side; within the reported noise; not established |
+| E128 | sub18 binary with the helper off, on the host | 193,962.2805 (+4.4% against E127) | First read as "sub18's engine is better on the host"; one upload per side; within the reported noise; not established |
+| E129 | Upload limits read from the CodaBench competition API | 5 per day, 23 per person | 22 used after sub19a; one remained, used by sub16t (E137) |
 | E130 | "Calibration" run of eight binary and helper combinations | Laptop 2–3 times slower than in the earlier session; rounds differ by up to 45% | Thrown away |
 | E131 | sub19a and sub19b: sub18's engine with sub16's helper | Both byte-identical to sub16 on 65/65; sub19a passed the full validation (fuzz 1,318 of 1,318) and the scratch checks | sub19a pushed as `native-v19a` and scored 199,057.7311 (E134). sub19b passed the full validation; not pushed |
 | E132 | Launcher-only fuzz pass on sub16, sub17, sub18 | 23 declined in each (19 + 4), against 25 and 27 in full replays | Explanation proposed, not confirmed |
 | E133 | Sensitivity flag raised only for consumed draws | Byte-identical 65/65, helper on and off | In the source only; not fuzz-replayed |
+| E134 | sub19a uploaded (977400) | 199,057.7311, −2.1% against sub16, +2.6% against sub18 with the helper off | One upload per side; within the reported noise; not established (H81). sub16 stays the best-scoring build |
+| E135 | Launcher-only pass over the stored fuzz cases on sub19a, three times | 23 declined each time (19 + 4); full replay 22 | One case unexplained |
+| E136 | sub16 binary with `T3_TRAIL=1`: scratch checks and three repeat runs | All passed; bytes stable across runs, different from the setting off | Candidate for the last upload |
+| E137 | sub16t (`native-v16t`, sub16 binary with `T3_TRAIL=1`) uploaded: the 23rd and last Development upload | Below sub16; exact score not recorded | One upload per side; within the reported noise; not established. sub16 stays the best-scoring Development build |
+| E138 | Final rules read: CodaBench phase settings, issue trackers, README | One upload per person; five runs per unit, median of the four after the warm-up; mean of unit rates over public and sealed units; a single failure is inadmissible; byte-identical repeats | Correctness of every path under the restrictions comes first |
+| E139 | Organizers' calibration on the timing machine (issues #24, #34) | Static binary 0.165–0.173 s per Final window; Python image 0.342–0.343 s; create-to-remove 0.630–0.643 s | About 0.46 s per unit is outside the Final window |
+| E140 | Another team's report of identical images scoring apart (issue #37) | Up to 14% on the Development board; organizers could not tell drift from noise | Single-upload differences of a few percent downgraded (§9.10.2) |
+| E141 | Reference path forced under the Final's restrictions on the sub16 full image (`lab/ref_path_check.sh`) | Single unit: `OSError: [Errno 30] Read-only file system: './log'`, no files; batch unit completed | Fix: `log_dir` in a fresh temporary directory |
+| E142 | Hand-over decision traced (launcher-only passes 23 declined against 22 in full replays) | Helper look-ahead could raise the sensitivity flag for draws the loop never consumed | Fix in `lab/bench/engine_final.cpp` |
+| E143 | Final binary against the sub16 binary, 65 single units | Byte-identical with the helper on and off | Build the full image |
+| E144 | Full validation of `final` (`lab/bench/validate_final.log`) | Tables 65/65; repeat-run bytes 65/65; batch 6/6; single and forced fallback exit 0; regression 65/65; fuzz 1,318 of 1,318 (1,296 / 22) | Passed |
+| E145 | Memory-settings image `finalm` (`lab/bench/Dockerfile.memoff`; `lab/bench/checks_finalm.log`) | Binary identical to `final`; batch 6/6; regression 65/65; no-ledger units 6/6 | Passed |
+| E146 | Reference path forced under the restrictions on the Final images (`lab/bench/refpath_final/`, `refpath_finalm/`) | Single unit 604 and 664 rows, equal to the reference; batch unit completed | Defect 1 fixed |
+| E147 | Decision round 8 | Full image 0.97 (scratch 0.01, new scratch 0.02); a sealed scenario handed over 0.56; full image more than 1% (3%) below scratch 0.36 (0.23) | Full image |
+| E148 | `native-final` pushed, pulled back by digest, run on one unit under the restrictions (`lab/bench/pullcheck/`) | Tables equal to the reference (71,932 and 63,287 rows) | Upload |
+| E149 | sub16's completed fuzz replay (`lab/bench/fuzz_sub16_complete.log`) | 1,318 of 1,318 (1,296 / 22) | Recorded |
+| E150 | Final upload 993712 | Finished; **1,755,232.6496**; no problems listed | The one Final upload used |
 
-E66 to E81 are also listed, with the context of those days, in §9.7.9; E82 to E104 in §9.8.12 and §9.8.15; E105 to E133 in §9.9.12; E134 to E136 in §9.9.16. Where a row above differs from its first appearance, the row above carries the later result.
+This table is the complete experiment log. E66 to E150 first appeared in per-section tables (§9.7 to §9.10); those tables have been replaced by pointers to this one, and each row here carries the latest result. Where a later result changed the reading of an earlier one, the first reading is kept as "first read as ...". Rows that compare one Development upload per side and differ by a few percent are marked "one upload per side; within the reported noise; not established": another team reported identical images scoring up to 14% apart on the Development board (E140, §9.10.2).
 
 ---
 
 ## 11. Limitations, risks and open work
 
-State at the time §9.9 was written. Points that earlier versions of this section listed as open and that have since been answered are kept, with the answer.
+State after the Final was submitted and scored (§9.10). Statements of earlier versions that the Final was pending are replaced. Points that earlier versions of this section listed as open and that have since been answered are kept, with the answer.
 
 ### 11.1 Correctness
 
 - **Sealed scenarios.** Exactness is established on the 65 public scenarios, the 30 batch sub-scenarios, 2,416 fuzz cases for the sub1 engine, and the 1,318 stored fuzz cases replayed on later builds (third item). Sealed scenarios may combine features in ways none of these do. Residual risk: a *silent* divergence in the native engine on an untested combination.
-- **The uploaded images since sub7 have no fallback.** They are scratch images that hold only the launcher (§9.7.4). A scenario the launcher declines exits with status 127 and the unit scores zero; in the full image the same scenario is handed to the Python path and passes. All 71 public units are handled by the launcher in every run made. Of the 1,318 stored fuzz cases, 22 to 27 are declined, depending on the build (fourth item). Whether the Final gets a scratch image or the full image is undecided (§9.9.15).
-- **Fuzz coverage by build.** The replay of the 1,318 stored cases (`native/fuzz/recheck_stored.py`, §9.7.2) gave 1,318 of 1,318 on sub6, sub7, sub8, sub9, sub10, sub11, sub12, sub13, sub14, sub17 and sub18. **sub16's replay is not in its validation log** (a separate run on the same image gave 1,318 of 1,318, §9.9.16): there it stopped at 200 of 1,318 when Docker failed and was not repeated (§9.9.4); sub17 and sub18, which are built on sub16, pass. sub15 was not replayed in full. sub19a's replay gave 1,318 of 1,318 (1,296 through the launcher, 22 handed to the Python path). sub4 and sub5 were never replayed. The 22-case re-check through `native/fuzz/recheck_launcher.py`, planned since sub4, was never run; the 1,318-case replay took its place.
-- **The number of declined fuzz cases differs between builds and between runs.** Handed to the Python path: 22 (sub9), 23 (sub10 to sub13, and a launcher-only pass on sub16, sub17 and sub18: 19 with a non-boolean `protocol_enforcement`, 4 with a latency draw sensitive to the `log` implementation), 25 (full replay of sub17 and of the first sub18), 27 (full replay of sub18). The explanation, not confirmed by a targeted test, is that the helper thread draws latencies ahead of the event loop and a draw the run never consumes can still raise the sensitivity flag (§9.9.10). In a scratch image such a case scores zero. A fix exists in the source only (`native/engine/engine.cpp`, snapshot `lab/bench/engine_sub19_wip.cpp`): byte-identical on 65/65 units with the helper on and off, in no image, not fuzz-replayed. sub19a and sub19b carry sub16's helper code and therefore sub16's look-ahead, not the fix.
+- **The Development uploads since sub7 had no fallback.** They were scratch images that hold only the launcher (§9.7.4). A scenario the launcher declines exits with status 127 and the unit scores zero; in the full image the same scenario is handed to the Python path and passes. All 71 public units are handled by the launcher in every run made. Of the 1,318 stored fuzz cases, 22 to 27 are declined, depending on the build (fourth item). The Final got the full image, in which a declined input is handed to the exact Python path (§9.10.4). Whether any sealed scenario was declined is not known; decision round 8 put it at 0.56.
+- **Fuzz coverage by build.** The replay of the 1,318 stored cases (`native/fuzz/recheck_stored.py`, §9.7.2) gave 1,318 of 1,318 on sub6, sub7, sub8, sub9, sub10, sub11, sub12, sub13, sub14, sub17 and sub18. **sub16's replay is not in its validation log** (a separate run on the same image gave 1,318 of 1,318, §9.9.16): there it stopped at 200 of 1,318 when Docker failed and was not repeated (§9.9.4); sub17 and sub18, which are built on sub16, pass. sub15 was not replayed in full. sub19a's replay gave 1,318 of 1,318 (1,296 through the launcher, 22 handed to the Python path). sub4 and sub5 were never replayed. The 22-case re-check through `native/fuzz/recheck_launcher.py`, planned since sub4, was never run; the 1,318-case replay took its place. The Final image's replay gave 1,318 of 1,318 (1,296 through the launcher, 22 to the Python path; §9.10.4).
+- **The number of declined fuzz cases varies between builds (22 to 27) and, on one build, between a full replay and a launcher-only pass (22 against 23 on sub19a).** Handed to the Python path: 22 (sub9, sub19a, the Final image), 23 (sub10 to sub13, and a launcher-only pass on sub16, sub17 and sub18: 19 with a non-boolean `protocol_enforcement`, 4 with a latency draw sensitive to the `log` implementation), 25 (full replay of sub17 and of the first sub18), 27 (full replay of sub18). The cause, traced in the code while preparing the Final but not by a targeted test, is that the helper thread draws latencies ahead of the event loop and a draw the run never consumes can still raise the sensitivity flag (§9.9.10, §9.10.3). In a scratch image such a case scores zero. A fix exists in the source only (`native/engine/engine.cpp`, snapshot `lab/bench/engine_sub19_wip.cpp`): byte-identical on 65/65 units with the helper on and off, in no image, not fuzz-replayed. sub19a and sub19b carry sub16's helper code and therefore sub16's look-ahead, not the fix. A fix of the same defect for sub16's engine (`lab/bench/engine_final.cpp`) ships in the Final image (§9.10.3).
 - **Negative latencies** make trace rows arrive out of time order. sub14 failed such runs (29 stored fuzz cases); since sub15 `repair_trace` handles them natively (§9.8.15). No public unit has a negative latency.
+- **The last-resort ABIDES path on the read-only root.** Until the Final build, `abides.run` was called without `log_dir`, and a forced reference run on a single unit crashed under the runtime restrictions (`OSError: [Errno 30] Read-only file system: './log'`, §9.10.3). Fixed in the Final image and checked on one single and one batch unit. The scored Development images had no Python layer and could not reach this path.
 - **32-bit fields in the trace row (sub18 and later).** `row_fits` checks every value before it is stored; a value that does not fit stops the run, which sends the scenario to the fallback path, and in a scratch image that is a zero for the unit. All 71 public units pass, and a launcher-only pass over the stored fuzz cases on sub18 declined the same 23 as on sub16 (§9.9.10), so none of them stops for this reason.
 - **From sub5 on, the output files are not byte-identical to the reference files.** They are valid Parquet files that read back as the same tables (§9.5), and the published scorer compares tables and our own declared hash (§7.9). If a sealed check compared file bytes or file hashes with the reference, every unit would fail. We found no such check in the public scorer, the README or the regression harness; the official regression passes on every validated build and every upload since sub5 has received a score.
 - **Readers other than pyarrow/pandas were not tried.** The files were read with pyarrow 15.0.2 and pandas 1.5.3 only (the versions in the image and, per the upstream pins, in the scorer).
@@ -2167,24 +2175,24 @@ State at the time §9.9 was written. Points that earlier versions of this sectio
 
 ### 11.2 Performance
 
-- **What we know about the host comes from scores only.** Thirteen uploads have been scored under the new rule (§1.1, §9.8.1, §9.9.1). Per-unit results from the platform were never obtained: they need the team's login, which was asked for several times (§9.9.14). The fixed cost per container on the host is therefore still unknown. It is bounded above by 0.471 s by the leader's score (§9.8.7); a participant reports "roughly half a second" (§9.9.2), which agrees with that bound only roughly. The organizers' calibration post had not appeared when this was written.
-- **Run-to-run variation on the host.** Earlier versions of this report called the host shared and its scores noisy to about 1.6%. The organizers state that Development runs on a single machine that takes only Track 3 runs, one submission at a time, and another team reports two runs agreeing to within 0.1% (§9.9.2). Our 1.6% comes from two sub4 uploads that were never checked to carry the same image (§9.4). This report records no second upload of one known digest, so we have no measurement of our own.
-- **Laptop timing does not predict the host.** Memory work measured at −12.5% and −12.1% on the laptop was worth nothing there (§9.8.2); a model "fixed cost + k × laptop process time" cannot reproduce the ranking of our own builds (rms residual 3.2%, maximum 6.3%, §9.9.6); three score projections for sub17 made from laptop timing were all wrong (§9.9.8). Only ratios within one laptop session mean anything: sub16 measured 1.895 s in one session and 2.228 s in another (§9.9.3).
+- **What we know about the host comes from scores and the organizers' statements.** Fifteen Development uploads were scored under the new rule (thirteen by §9.9, then sub19a and sub16t: §1.1, §9.9.16, §9.10.1), and the Final once (§9.10.5). Per-unit results from the platform were never obtained: they need the team's login, which was asked for several times (§9.9.14). The fixed cost per container on the host is therefore still unknown. It is bounded above by 0.471 s by the leader's score (§9.8.7); a participant reports "roughly half a second" (§9.9.2), which agrees with that bound only roughly. The organizers' calibration (create-to-remove 0.630–0.643 s for a static binary that only copies outputs, 0.165–0.173 s of it inside the Final's window) lies above that bound; §9.10.2 explains why the two need not conflict.
+- **Run-to-run variation on the host.** Earlier versions of this report called the host shared and its scores noisy to about 1.6%. The organizers state that Development runs on a single machine that takes only Track 3 runs, one submission at a time, and another team reports two runs agreeing to within 0.1% (§9.9.2). Our 1.6% comes from two sub4 uploads that were never checked to carry the same image (§9.4). This report records no second upload of one known digest, so we have no measurement of our own. Another team has since reported identical images scoring up to 14% apart on the Development board, and the organizers could not tell drift from noise (issue #37, §9.10.2). Every conclusion that rests on one Development upload per side and a difference of a few percent is therefore **not established** (§10, §15); this covers all the host readings of a few percent in this report. The larger steps, +18% (sub5 over sub4) and +7.6% (sub16 over sub11), are kept as observed, with one upload per side.
+- **Laptop timing does not predict the host.** Memory work measured at −12.5% and −12.1% on the laptop showed no gain in the one host upload that tested it (sub9 −0.8%, one upload per side, §9.8.2); a model "fixed cost + k × laptop process time" cannot reproduce the ranking of our own builds (rms residual 3.2%, maximum 6.3%, §9.9.6); three score projections for sub17 made from laptop timing were all wrong (§9.9.8). Only ratios within one laptop session mean anything: sub16 measured 1.895 s in one session and 2.228 s in another (§9.9.3).
 - **Whole-process figures measured from the unit folders include the input mount.** On this laptop the unit folders are a Windows-backed mount that adds 10 to 20 ms per run which the host does not have. This affects the figures of §9.8.3 and §9.8.15 and the `fig_*.json` files (§9.9.3). `lab/true_p.py` copies the inputs to memory first.
 - **Hardware counters are the stable local instrument** (instructions ±0.00%, branch misses under 0.5%, cycles 0.5–2% on one thread, §9.9.3). They describe the simulation thread and say nothing about thread placement on the host.
-- **Threads on the host.** The latency helper thread is worth 9.5% of score on the sub16 binary (same binary, one environment variable; §9.9.8). Writer threads during the run were worth 1.6% on the sub17 binary. Why sub17, whose helper starts at engine creation, scored 3.6% below sub16 although its engine is better is **not established**; the placement explanation in §9.9.8 is an untested guess. sub18 with its own sleeping helper was never uploaded.
+- **Threads on the host.** The sub16 binary scored 9.5% higher with the latency helper thread than without it (same binary, one environment variable; §9.9.8); writer threads during the run scored 1.6% higher on the sub17 binary; sub18's engine scored 4.4% above sub16's with the helper off on both; sub17, whose helper starts at engine creation, scored 3.6% below sub16. Each is one upload per side; within the reported noise; not established. The reading "by elimination, sub17's helper start-up" rests on these pairs and is not established either; the placement explanation in §9.9.8 is an untested guess. sub18 with its own sleeping helper was never uploaded.
 - **The 4-CPU quota.** It is a CFS quota, not pinned cores. Locally no throttled period was counted (§9.7.3, §9.8.5). On the host this cannot be read.
 - **Where the time goes now.** On the largest unit, one thread, sub17 test build: `Engine::run` with inlined handlers 21.7% of cycles, latency draws about 27.5%, output encoding and SHA-256 about 20%, `sift_down` 5.8% (§9.9.3). The engine review's remaining ideas are listed in §9.9.6; the largest ("lazy passive receipts", its estimate 20–28%, 12–20 hours, high risk) was not attempted.
-- **Where `/output` lives.** It is a bind mount of a host directory, per the toolkit's DEVELOPMENT-RUNTIME document and the public harness (§9.7.1, §9.9.6). The filesystem behind it is not known. Output size was not a major term in the one test we have (sub7, §9.7.6).
+- **Where `/output` lives.** It is a bind mount of a host directory, per the toolkit's DEVELOPMENT-RUNTIME document and the public harness (§9.7.1, §9.9.6). The filesystem behind it is not known. Whether image shape or output size matters on the host is not established: the one test (sub7 over sub5, +1.85%, §9.7.6) is one bundled pair that also changed the output encoding, inside the reported noise.
 - **Output size.** Since sub10 the 65 public units write about 95 MB in total (§9.8.15); sub5's uncompressed files (758.7 MB) are history.
 - **How high the score can go.** With zero process time the score is 108,853 ÷ c for a fixed cost of c seconds per container (§9.8.7); c is not known. From sub16's score, 220,000 needs the host process time cut by 27% (if c is 0.36 s) to 46% (0.44 s), and 230,000 by 41% to 68% (score-model agent, §9.9.6). The leader has stood at 231,024 since sub4 was scored. The 300,000 asked for is not in sight.
 - **Machine noise** (§16.4): a "calibration" run was thrown away because the laptop was two to three times slower than in the earlier session and two rounds of one binary differed by up to 45% (§9.9.3).
-- **The Final differs from Development in what is timed**: Docker's `State.StartedAt → FinishedAt` instead of create → remove, five runs per unit (a warm-up and four counted), 300 s per run, 4 CPUs, 16 GiB, on the same machine (§2.2, §9.9.2). The organizers' rehearsal was postponed. We have not rehearsed the five-run protocol with the upstream `throughput/timer.py`; repeat-run byte stability (three runs of every scenario) is part of every validation.
+- **The Final differs from Development in what is timed**: Docker's `State.StartedAt → FinishedAt` instead of create → remove, five runs per unit (a warm-up and four counted), 300 s per run, 4 CPUs, 16 GiB, on the same machine (§2.2, §9.9.2), with the score the mean of unit rates over public and sealed units (§9.10.2). The Final has been run: upload 993712 scored 1,755,232.6496 with no problems listed (§9.10.5). We never rehearsed the five-run protocol with the upstream `throughput/timer.py`; repeat-run byte stability (three runs of every scenario) is part of every validation, the Final image's included. The cost of the full image against the scratch image in the Final window was never measured (§9.10.4): the full image was chosen as a risk decision (all-or-nothing correctness on sealed scenarios), not on a measurement.
 
 ### 11.3 Process
 
-- **Upload budget.** 5 per day and 23 per person in total (competition page; the 20 in §9.8.7 was a toolkit document's figure). After upload 977400 (sub19a) the team had used 22: one remained (§9.9.16). A held upload still consumes an attempt (issue #20). The last Development runs must start by the Development deadline and the Final takes one submission (§9.7.5).
-- **Changes were bundled into single uploads more than once** (sub11, sub13, sub17), and each time the score could not be attributed (§9.8.14, §9.8.15, §9.9.14).
+- **Upload budget.** 5 per day and 23 per person in total (competition page; the 20 in §9.8.7 was a toolkit document's figure). All 23 were used; the last, sub16t, scored below sub16 (§9.10.1; one upload per side, within the reported noise, not established). A held upload still consumes an attempt (issue #20). The Final allowed one upload per person, at any time in a window of about two weeks after Development closed; it was used (§9.10.5).
+- **Changes were bundled into single uploads more than once** (sub11, sub13, sub17), and each time the score could not be attributed (§9.8.14, §9.8.15, §9.9.14). With one upload per build, most score differences between builds are not established either (§11.2).
 - **No native Linux machine was used for measurement** (§9.7.1, point 6).
 - **Image digests are not bit-reproducible.** Rebuilding gives a different image ID. Reproducibility is defined by output hashes (§12.6).
 - **The reproduction kit was hardened because it failed**: twice the Docker VM died mid-run (§16.6). On a machine with more memory `repro.sh all` should suffice; on this one `repro/run_resilient.sh` was needed.
@@ -2193,12 +2201,14 @@ State at the time §9.9 was written. Points that earlier versions of this sectio
 
 ### 11.4 Open work, in the order we would do it
 
-1. sub19a (sub18's engine with sub16's helper) is validated and pushed (§9.9.9): upload it and read the score. sub19b: validation, if it is to be used.
-2. Decide the Final image: scratch (a declined scenario scores zero) or full (exact Python fallback, slower start).
-3. Put the sensitivity-flag fix of §9.9.10 into an image and replay the fuzz corpus on it; complete a fuzz replay for whichever build goes to the Final.
-4. Obtain per-unit host results through the team's login, to fix the per-container cost.
-5. Establish why a helper thread started at engine creation is worth less on the host than one woken at run start.
-6. Rehearse the Final protocol with the upstream `throughput/timer.py` (5 runs, same seed, byte-identical outputs across repeats).
+The items an earlier version listed for Development and the Final (upload sub19a, decide the Final image, ship the fix of §9.9.10, complete a fuzz replay for the Final build) are done (§9.9.16, §9.10). What is left:
+
+1. The organizers' verification and the publication of results; keep `native-final` pullable by digest until then.
+2. Publication of this record (this report, `paper/`, the repository).
+3. If the work continues: obtain per-unit host results, to fix the per-container cost (see §9.10.2 for its relation to the organizers' calibration).
+4. Measure the full image against the scratch image on the host (H88).
+5. Repeat uploads of one digest, to measure host noise (H85).
+6. With repeat uploads, establish whether the thread effects of a few percent (helper thread, writer threads, sub17's helper start-up) are real, and only then why.
 7. A fresh fuzz campaign against the current engine, the launcher's declining paths and the writer (random tables against pyarrow's reader). Not done since the sub1 campaign.
 8. A direct comparison of numpy's and glibc's `log` on an AVX-512 machine.
 9. Engine ideas not implemented: bottom-up pop, noise-trader draws on the helper thread, prefetching, lazy passive receipts (§9.9.6).
@@ -2334,7 +2344,7 @@ Digests of sub1–sub3 are in §14.5. Those images have no launcher; the kit lab
 | Cycles and instructions per event (§7.7) | Instructions: closely; cycles: CPU-dependent |
 | events/s, process times, `docker run` times | Machine-dependent; expect similar ratios between images, not the same numbers |
 | Image digest after a rebuild | No (build timestamps and metadata); behaviour is identical |
-| Leaderboard score | Depends on the organizers' host and, in Development, on a single run per unit. The organizers state that the host is one machine that takes only Track 3 runs; another team reports two runs agreeing to within 0.1% (§9.9.2). We have no repeat upload of our own to confirm it |
+| Leaderboard score | Depends on the organizers' host and, in Development, on a single run per unit. The organizers state that the host is one machine that takes only Track 3 runs; another team reported two runs agreeing to within 0.1% (§9.9.2), and later another team reported identical images scoring up to 14% apart on the Development board (issue #37, §9.10.2). We have no repeat upload of our own; differences of a few percent between single uploads are not established (§11.2) |
 
 ### 12.7 Results of our own end-to-end reproduction runs
 
@@ -2396,7 +2406,7 @@ Not done: the re-check of the 22 stored failing cases through the reference, lau
 | Host end-to-end timing (§1.4) | `python lab/e2e.py agenthon-track3:sub3,agenthon-track3:sub4 3 <scenario,…>` |
 | Runtime-restriction check (§9.4) | `docker run --rm --network none --read-only --user 65534:65534 --pids-limit 256 --cpus 4 --tmpfs /tmp:size=64m,noexec -v <in>:/input:ro -v <out>:/output <image> simulate --config /input/scenario.json --out /output/trace.parquet` |
 | Fuzzing (§8) | `native/fuzz/gen.py` / `mk_*.py` to generate, `driver.py` to run, `recheck.py` (Python path) or `recheck_launcher.py` (reference vs launcher vs Python path) to re-verify |
-| Decision rounds (§4.2, §9.7.5, §9.9.6) | not reproducible from this repository (scripts and raw responses are not deposited); the questions and answers of the seven rounds are in the sections cited |
+| Decision rounds (§4.2, §9.7.5, §9.9.6, §9.10.4) | not reproducible from this repository (scripts and raw responses are not deposited); the questions and answers of the eight rounds are in the sections cited |
 
 The `lab/` scripts were written for this machine. They now find the project root from their own location (the absolute paths were removed, §9.8.11); several are meant to run inside the dev container `t3dev` (§14.1). The `repro/` kit is the portable version.
 
@@ -2406,7 +2416,7 @@ The `lab/` scripts were written for this machine. They now find the project root
 3. `docker tag agenthon-track3:<name> slashalpha/agenthon-track3:<tag> && docker push slashalpha/agenthon-track3:<tag>`
 4. Copy the pushed digest into `sub/submission.json` → `image.digest`.
 5. Run `python sub/build_submission.py`. It prompts for the **Team Key** (hidden), reseals the descriptor, and writes `sub/submission.zip`. Run this step yourself, in an ordinary terminal.
-6. Upload `sub/submission.zip` on CodaBench under *My Submissions → Development* (5 uploads per day and 23 per person in total; §9.9.1).
+6. Upload `sub/submission.zip` on CodaBench under *My Submissions → Development* (5 uploads per day and 23 per person in total; §9.9.1). The Final phase (*Final & Verification*) allowed one upload per person (§9.10.2).
 
 ### 12.10 Checks and measurements used from sub7 on
 
@@ -2417,6 +2427,7 @@ These are the commands behind §9.7 to §9.9. Scripts under `lab/` are run from 
 | Full validation of a full image | `bash lab/validate_image.sh <tag>`: tables of the 65 scenarios, repeat-run bytes (3 runs each), the 6 batch units under the runtime restrictions, a single run and a forced fallback run, the organizers' regression, the 1,318 stored fuzz cases. `bash lab/build_validate.sh <tag>` builds the image first; `bash lab/validate_rest.sh <tag>` runs only the last two stages | `lab/bench/validate_<tag>.log`, details in `lab/bench/val_<tag>/` |
 | Fast checks before the long validation | `bash lab/quick_checks.sh <tag> [reference tag]`: tables, the six no-ledger units, repeat-run stability with and without writer threads, the 29 negative-latency cases with no Python reachable | standard output |
 | Checks of a scratch image | `bash lab/scratch_checks.sh <scratch tag> <full tag>`: binary identical to the validated full image, batch 6, organizers' regression, six no-ledger units | `lab/bench/scratch_<tag>.log` |
+| The last-resort ABIDES path under the runtime restrictions | `bash lab/ref_path_check.sh <tag>`: forces `T3_NO_LAUNCHER=1 T3_FORCE_REFERENCE=1` on one single unit and one batch unit under the Final's restrictions and compares the single unit's tables with the reference (§9.10.3) | `lab/bench/refpath_<tag>/` |
 | Units that need no ledger | `bash lab/check_skip.sh <tag>` (§9.8.3) | terminal |
 | Why the launcher declined a fuzz case | `native/fuzz/decline_reasons.py` (launcher only, `PATH` emptied); `native/fuzz/dump_case.py` writes cases out | `lab/bench/failcases/` |
 | Fresh-container timing | `bash lab/cold_runs.sh <tag> <repeats> <unit> [docker run options]` (§9.8.5) | `lab/bench/cold_out/` |
@@ -2428,7 +2439,7 @@ These are the commands behind §9.7 to §9.9. Scripts under `lab/` are run from 
 | Hardware counters, one thread | `T3_LAT_THREAD=0 T3_TRAIL=0 perf stat -e cycles:u,instructions:u,branch-misses:u <binary> simulate …` (§9.9.3) | terminal |
 | The image's profile-guided build, in the dev container | `build_pgo_dev.sh <output binary>` | the binary |
 
-A scratch image with the helper thread off is made from an existing scratch image with `lab/bench/Dockerfile.nohelper` (`ARG BASE`, `FROM ${BASE}`, `ENV T3_LAT_THREAD=0`), which changes the image's environment and adds no layer (§9.9.8).
+A scratch image with the helper thread off is made from an existing scratch image with `lab/bench/Dockerfile.nohelper` (`ARG BASE`, `FROM ${BASE}`, `ENV T3_LAT_THREAD=0`), which changes the image's environment and adds no layer (§9.9.8). `lab/bench/Dockerfile.trail` (`ENV T3_TRAIL=1`, sub16t) and `lab/bench/Dockerfile.memoff` (`ENV T3_HUGE=0 T3_PREFAULT=0`, the Final image) are used the same way (§9.9.16, §9.10.4).
 
 ---
 
@@ -2442,8 +2453,8 @@ Paths that earlier versions of this table listed and that no longer exist are na
 | `paper/` | Shorter illustrated version (`zenodo_report.md`, `zenodo_report.pdf`), `make_figures.py`, `build_report.py` |
 | `repro/` | Portable reproduction kit (§12); `repro/out/full_run_sub4.log` is the log behind §12.7 |
 | `scripts/fetch_upstream.sh` | Fetches the organizers' checkouts, which are not tracked |
-| `sub/` | **Submission source:** `Dockerfile` (full image), `Dockerfile.min` (scratch image, §9.7.4), `t3native/`, `native/` (engine, launcher, RNG), `abides_fork/`, `patches/`, `perf/`, `submission.json`, `build_submission.py`, `README.md`. `simulate` / `simulate-batch` shell shims are kept but not installed by the Dockerfile |
-| `native/engine/engine.cpp` | Native engine (single source of truth; synced into `sub/` by `lab/sync_sub.sh`). At the time of writing it is sub18 plus the sensitivity-flag fix of §9.9.10. `engine_sub3.cpp` is the sub3 engine, kept for comparison |
+| `sub/` | **Submission source:** `Dockerfile` (full image), `Dockerfile.min` (scratch image, §9.7.4), `t3native/`, `native/` (engine, launcher, RNG), `abides_fork/`, `patches/`, `perf/` (`abides_fork/simulate.py` passes a temporary `log_dir` since the Final build, §9.10.3), `submission.json`, `build_submission.py`, `README.md`. `simulate` / `simulate-batch` shell shims are kept but not installed by the Dockerfile |
+| `native/engine/engine.cpp` | Native engine (single source of truth; synced into `sub/` by `lab/sync_sub.sh`). When §9.9 was written it was sub18 plus the sensitivity-flag fix of §9.9.10. The Final's engine is the snapshot `lab/bench/engine_final.cpp` (§9.10.3). `engine_sub3.cpp` is the sub3 engine, kept for comparison |
 | `native/engine/launcher.cpp` | No-Python `simulate` / `simulate-batch` |
 | `native/engine/pq_fast.hpp`, `sha256.hpp` | Built-in Parquet writer and SHA-256 (sub5 onward; §7.9) |
 | `native/engine/pgo_train/` | Training scenarios of the profile-guided build (§9.8.4) |
@@ -2455,12 +2466,13 @@ Paths that earlier versions of this table listed and that no longer exist are na
 | `native/pkg/t3native/` | Python package: `cli.py`, `batch.py`, `native_sim.py`, `writer.py` |
 | `native/refdump/` | ABIDES instrumentation, `first_divergence.py`, `DUMP_FORMAT.md`, `COVERAGE.md` |
 | `native/fuzz/` | Fuzz generators, case logs (`*.jsonl`), `recheck.py`, `recheck_launcher.py`, `recheck/` (22 stored failing cases), `recheck_stored.py` (replay of the 1,318 stored cases), `decline_reasons.py`, `dump_case.py` |
-| `lab/` | Development harnesses. Validation: `validate_image.sh`, `validate_rest.sh`, `build_validate.sh`, `build_variant.sh`, `quick_checks.sh`, `scratch_checks.sh`, `check_skip.sh`, `run_reg.sh`. Timing: `cold_runs.sh`, `measure_builds.sh`, `true_p.py`, `e2e.py`, `ab.py`. Comparison in the dev container: `cmp_bins.sh`, `cmp_tables.py`, `build_pgo_dev.sh`. |
-| `lab/bench/` | Logs and results: `validate_sub7.log` to `validate_sub19a.log`, `scratch_sub*.log`, `check_fast_all*.log`, `official_sub5.log`, `official_sub6.log`, timing files (`all_sub*.json`, `best_*.json`, `gb_sub*.json`, `ot_sub*.json`, `fig_*.json`, `truep_*.json`), `measure_fig.log`, source snapshots of each build (`engine_sub6.cpp` to `engine_sub19b.cpp`, `launcher_sub6.cpp` to `launcher_sub18.cpp`), `failcases/` (the 29 negative-latency fuzz cases), `Dockerfile.nohelper` |
+| `lab/` | Development harnesses. Validation: `validate_image.sh`, `validate_rest.sh`, `build_validate.sh`, `build_variant.sh`, `quick_checks.sh`, `scratch_checks.sh`, `check_skip.sh`, `run_reg.sh`. Timing: `cold_runs.sh`, `measure_builds.sh`, `true_p.py`, `e2e.py`, `ab.py`. Comparison in the dev container: `cmp_bins.sh`, `cmp_tables.py`, `build_pgo_dev.sh`. Last-resort path under the restrictions: `ref_path_check.sh` (§9.10.3). |
+| `lab/bench/` | Logs and results: `validate_sub7.log` to `validate_sub19a.log`, `validate_final.log` (the Final image), `checks_finalm.log` (the Final image with the memory settings), `fuzz_final.log` and `fuzz_sub16_complete.log` (fuzz replays of the Final image and of sub16), `refpath_<tag>/` (forced reference path), `pullcheck/` (the pushed Final image pulled back by digest), `scratch_sub*.log`, `check_fast_all*.log`, `official_sub5.log`, `official_sub6.log`, timing files (`all_sub*.json`, `best_*.json`, `gb_sub*.json`, `ot_sub*.json`, `fig_*.json`, `truep_*.json`), `measure_fig.log`, source snapshots of each build (`engine_sub6.cpp` to `engine_sub19b.cpp`, `launcher_sub6.cpp` to `launcher_sub18.cpp`), `engine_final.cpp` (the Final's engine), `failcases/` (the 29 negative-latency fuzz cases), `Dockerfile.nohelper`, `Dockerfile.trail`, `Dockerfile.memoff` |
 | `lab/sub5_src/` | Copy of the native sources and Dockerfile exactly as built into sub5 |
 | `lab/agent240/` | Scratch scripts of the first review (§9.8.7; not tracked) |
 | `lab/agent220/` | Records of the three agents: `model/` (score model), `osint/` (issue threads and public repositories), `engine/review.md` (§9.9.6) |
-| `lab/agent_report/facts_sub16_19.md` | Fact sheet from which §9.9 and the latest updates of §10 to §17 were written |
+| `lab/agent_report/facts_sub16_19.md` | Fact sheet from which §9.9 and the updates of §10 to §17 of that period were written |
+| `lab/agent_report/facts_final.md` | Fact sheet from which §9.10 and the updates of §0, §1 and §10 to §17 that concern the Final were written |
 | `docker_backup/` | `docker save` archive of the images in use (§9.8.11) |
 | `track3-simulation-public-clone/` | Organizer repo at `4cc7882` (scenarios, units, locally generated reference traces); not tracked |
 | `track3-upstream/` | Organizer repo at `bffb572` (current harness and rules); not tracked |
@@ -2478,7 +2490,7 @@ Paths that earlier versions of this table listed and that no longer exist are na
 - **CPU:** AMD Ryzen 5 5500U; SHA instructions present (`sha_ni`); no AVX-512 (`grep -c avx512f /proc/cpuinfo` → 0). Hardware performance counters are available inside privileged containers.
 - **Dev container:** `t3dev` (image `t3-native-perf`), with `/native`, `/units`, `/lab` and `/sub` mounted and `perf` installed (§9.9.11).
 - **Unit folders** are a Windows-backed mount inside containers and add 10 to 20 ms per run to anything timed from them (§9.9.3).
-- **Scoring host** (not ours): per the organizers a single machine, a Xeon Platinum 8570, that takes only Track 3 runs and is also the Final's machine (§2.2, §9.9.2).
+- **Scoring host** (not ours): per the organizers a single machine, a Xeon Platinum 8570, that takes only Track 3 runs and is also the Final's machine (§2.2, §9.9.2). Per the organizers' calibration, a KVM virtual machine on that CPU with 20 vCPUs (10 cores × 2 threads) and one NVIDIA B200 (§9.10.2).
 
 ### 14.2 Inside the submission image
 - This subsection describes the full image. The scratch images uploaded since sub7 hold only the static launcher, a `simulate-batch` symlink, empty directories and a two-line `passwd` and `group` (§9.7.4).
@@ -2524,7 +2536,7 @@ Check with: `sha256sum sub/native/engine/*.cpp sub/native/rng/np_random.hpp sub/
 
 ### 14.5 Image digests
 
-All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8.1 and §9.9.1.
+All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8.1, §9.9.1 and §9.10.
 
 | Image | Digest |
 |---|---|
@@ -2546,7 +2558,9 @@ All on Docker Hub under `slashalpha/agenthon-track3`. Scores are in §1.1, §9.8
 | sub16 binary, helper thread off `:native-v16-helper-off` | `sha256:31cb73d3789e38dba5f47f6c6e91068ecd216f45656fa1dd4fc405bbf8788f5c` |
 | sub18 binary, helper thread off `:native-v18-helper-off` | `sha256:b437b60816126789b60d9faa5c0c0a16b0fdd7d7e851d5b4711140ff5feaf6ce` |
 | sub18, helper sleeping `:native-v18-helper-sleeping` (pushed, never uploaded) | `sha256:2f9c4d39a04390cb7700dfc8730746efabe3cf9bbbe64c26846235fcfae38ea7` |
-| sub19a (scratch) `:native-v19a` (pushed; no host score at the time of writing) | `sha256:abca67f17b3558eedca6e44ec2e437ec5b9ff7ccb3121c4ad2c4879f53dcf434` |
+| sub19a (scratch) `:native-v19a` | `sha256:abca67f17b3558eedca6e44ec2e437ec5b9ff7ccb3121c4ad2c4879f53dcf434` |
+| sub16 binary, writer threads on `:native-v16t` (the last Development upload) | `sha256:b0478b41338580ff4cd4285551ce0b3dcaff1a96e974bf391d739d9403f32602` |
+| **Final** `:native-final` (full image; Final upload 993712) | `sha256:44f825eb7b8a5e0276baea84aafe3c344bdbb927500dac2a6ac0782e05e93487` |
 
 sub8, sub12, sub14, sub15 and sub19b exist as local images only at the time of writing.
 
@@ -2569,7 +2583,7 @@ sub8, sub12, sub14, sub15 and sub19b exist as local images only at the time of w
 | Cycles / instructions per event | User-mode CPU cycles / instructions spent inside `t3_simulate`, divided by trace rows |
 | ulp | Unit in the last place of a floating-point number |
 | Decision model | An external model that answers typed questions (probability, graded value, choice), used for decision routing (§4.2) |
-| sub1 … sub19b | Our successive builds. Uploaded: sub1, sub2, sub4, sub5, sub7, sub9, sub10, sub11, sub13, sub16, sub17 (two variants), and the sub16 and sub18 binaries with the helper thread off. The others were not uploaded |
+| sub1 … sub19b | Our successive builds. Uploaded: sub1, sub2, sub4, sub5, sub7, sub9, sub10, sub11, sub13, sub16, sub17 (two variants), the sub16 and sub18 binaries with the helper thread off, sub19a, and sub16t (the sub16 binary with writer threads on). The Final upload was `native-final` (§9.10). The others were not uploaded |
 | Full image / scratch image | The full image is `python:3.11-slim` with the launcher and both Python fallback layers. The scratch image holds only the static launcher (about 2.2 MB, one layer); a scenario the launcher declines exits with status 127 there (§9.7.4) |
 | Unit | One scored item of the roster: a folder with `scenario.json` (or a `scenarios/` directory for a batch unit) and `card.toml`, mounted at `/input`. Development scores 71 public units: 65 single and 6 batch |
 | Card | A unit's `card.toml`; its `requires_message_ledger` flag decides whether the ledger file is needed (§9.8.3) |
@@ -2588,7 +2602,7 @@ sub8, sub12, sub14, sub15 and sub19b exist as local images only at the time of w
 
 ## 15. Hypothesis register
 
-Every hypothesis that drove a decision, the test, the outcome, and whether the evidence was a measurement or an argument. H1–H7 are the Phase-A hypotheses of §4.2 and §6; the rest are numbered in the order they arose. H44–H53 first appeared in §9.7.10, H54–H68 in §9.8.13 and §9.8.15, H69–H83 in §9.9.13; the rows here carry the status. Two pairs are one hypothesis under two numbers: H43 and H47, H64 and H68.
+Every hypothesis that drove a decision, the test, the outcome, and whether the evidence was a measurement or an argument. H1–H7 are the Phase-A hypotheses of §4.2 and §6; the rest are numbered in the order they arose. This register is the single complete list: H44 to H90 first appeared in per-section tables (§9.7 to §9.10), which have been replaced by pointers to it, and each row here carries the latest status. Two pairs are one hypothesis under two numbers: H43 and H47, H64 and H68.
 
 | ID | Hypothesis | Test | Outcome | Status |
 |---|---|---|---|---|
@@ -2612,7 +2626,7 @@ Every hypothesis that drove a decision, the test, the outcome, and whether the e
 | H19 | The slowest units are slow because of requeues | Counters per scenario (711,316 of 980,960 iterations on `mr_deep_book`) | Blocked queues removed them from the slowest list | **Confirmed** |
 | H20 | Blocked queues give exactly the reference's dispatch order | Argument (§7.7) + independent reviewer's derivation + 65/65 identity | Identical | **Confirmed on everything tested** |
 | H21 | The latency stream depends only on the draw index, so it can be computed by another thread | Code reading (every `send` is between two different agents; generator has no other reader) + 65/65 identity × 3 | 437 → 352 cycles/event | **Confirmed** |
-| H22 | The helper thread is safe when only one CPU is available | Design (inline start, switch only once the helper is ahead; CPU gate) | Forced inline mode (`T3_LAT_THREAD=0`) is identical and was benchmarked; **a real single-CPU container was not run** | **Partly verified**. On the host, with four CPUs, the thread is worth 9.5% of score (H75) |
+| H22 | The helper thread is safe when only one CPU is available | Design (inline start, switch only once the helper is ahead; CPU gate) | Forced inline mode (`T3_LAT_THREAD=0`) is identical and was benchmarked; **a real single-CPU container was not run** | **Partly verified**. Its value on the host, with four CPUs, is not established (H75) |
 | H23 | The Development board still ranks self-reported loop speed, capped at 10M | Organizer post, upstream README, live board | False since the scoring change | **Refuted** |
 | H24 | Under the new rule, Python start-up dominates our measured time | Import timing; process timing (§7.8) | Simulation < 1% of an 800 ms process on a small unit | **Confirmed** |
 | H25 | A C++ program can link pyarrow's bundled libarrow/libparquet | 15-line test program | Links with CXX11 ABI 1, not with 0 | **Confirmed** |
@@ -2622,7 +2636,7 @@ Every hypothesis that drove a decision, the test, the outcome, and whether the e
 | H29 | The local rules checkout is still valid for validation | Diff against upstream `bffb572` | Scenarios and units unchanged; one reference line changed without changing its value | **Confirmed** |
 | H30 | sub4 will be competitive under the new rule | Upload | 153,825 and 151,387: rank 9 of 17, 67% of the leader's 231,024; sub3 was never uploaded, so there is no measured sub3-vs-sub4 comparison on the board | **Partly confirmed** (mid-table, not top) |
 | H31 | Large units decide rank under a plain mean | Arithmetic on the 65 public units with measured process times and the fitted overhead (§9.5); the decision model had answered "small units" (0.95) | The 8 largest units hold 55% of all events and supply 42–49% of sub5's modelled score; the 57 others supply the rest, each limited mainly by the fixed overhead | **Supported by a model that was later refuted** (H42, H60), not by a score. The second review's count is that the 58 units under 100,000 rows carry 45–50% of the score (§9.8.7). No per-unit host results exist to settle it |
-| H32 | The gap to the leaders is mostly our own process time, not the engine | Phase timing in the sub4 image, best of 5, 10 units | Parquet write 50–63% of the process, event loop 7–15% | **Confirmed locally and by the score**: removing the Arrow encoder gave +18.0% (sub5) |
+| H32 | The gap to the leaders is mostly our own process time, not the engine | Phase timing in the sub4 image, best of 5, 10 units | Parquet write 50–63% of the process, event loop 7–15% | **Confirmed locally**; on the host, removing the Arrow encoder gave +18.0% (sub5 over sub4, one upload of sub5) |
 | H33 | The verifier accepts any valid Parquet file with the same table | Reading the scorer; official regression on sub5 and sub6 | 65 passed, 0 failed, 0 errored for both | **Confirmed for the public harness and for the Development scorer** (every upload since sub5 was scored); a sealed byte-level check in the Final cannot be excluded (§11.1) |
 | H34 | A hand-written writer can produce files pyarrow and pandas read as the identical table, including nullable Int64 columns and dictionary strings | `check_fast.py`, `check_batch_tables.py` | 65/65 + 30 batch subs for sub5 and for sub6 | **Confirmed on everything tested** |
 | H35 | Loading libarrow is a visible fixed cost | Not isolated: the static binary arrived together with the new writer | sub4's unaccounted time per process was 20–80 ms; sub5's was about 5 ms on `st01` and about 35 ms on `gb_mega` | **Plausible, not isolated** |
@@ -2631,49 +2645,58 @@ Every hypothesis that drove a decision, the test, the outcome, and whether the e
 | H38 | sub6 is slower than sub5 (raised by one benchmark run) | Two further interleaved runs of each image | The slow run did not repeat (5.65 s, then 3.57 and 3.58 s) | **Refuted**; the run was noise |
 | H39 | A fixed container overhead caps the score well below 1M | Model fitted to sub4's score | Ceiling 221–324K for host-speed factors 0.6–1.3; the leader (231,024) lies inside that band | **The cap exists; the fitted numbers do not hold** (H42, H60). The bound that stands is 108,853 ÷ c for a fixed cost of c seconds, with c at most 0.471 s (§9.8.7) |
 | H40 | 300,000 is reachable | Same model | Needs the low end of the overhead range *and* near-zero process time | **Not reached and not in sight**: best score 203,394, leader 231,024 |
-| H41 | sub5 will score about 185–220K | Upload | 181,496 | **Refuted, narrowly** (2% under the lower bound) |
+| H41 | sub5 will score about 185–220K | Upload | 181,496, 2% under the lower bound | **Not established (one upload per side, within the reported noise)**; first read as refuted, narrowly |
 | H42 | The two-parameter overhead model describes the board | Fit to sub4 and sub5: k = 0.50, overhead 0.551 s, ceiling 208,565 | The leader's 231,024 is above the fitted ceiling | **Refuted as stated**. Later attempts fared no better: the fixed cost must be at most 0.471 s (H60), and no model of the form fixed cost + k × laptop time reproduces the ranking of our own builds (H70) |
-| H43 | Output size costs container time on the organizers' host | The sub7 scratch upload, whose files are 5.6× smaller than sub5's (E76); sub6 itself was never uploaded | +1.85%, including sub6's and sub7's other changes | **Not supported** (restated as H47) |
+| H43 | Output size costs container time on the organizers' host | The sub7 scratch upload, whose files are 5.6× smaller than sub5's (E76); sub6 itself was never uploaded | +1.85%, including sub6's and sub7's other changes | **Not established (one upload per side, within the reported noise)** (restated as H47) |
 | H44 | The rewritten engine (sub4 onward) still reproduces the fuzz corpus | E67 and the fuzz stage of every full validation since | 1,318 of 1,318 on sub6 to sub14, sub17 and sub18 | **Confirmed** for those builds. For sub16 the replay in the validation log stopped at 200; a separate one completed with 1,318 of 1,318 (§9.9.16); 1,318 of 1,318 on sub19a |
 | H45 | The launcher handles most inputs itself | E67, E68 | 27% of the corpus on sub6; 98.3% after `as_int` was made to mirror `int()` | **Refuted, then repaired** in sub7 |
-| H46 | Part of the fixed container cost depends on image shape | E76 | +1.85% including other changes | **Refuted as a major effect** |
-| H47 | Output size costs container time on the scoring host | E76 | As H43 | **Not supported** |
+| H46 | Part of the fixed container cost depends on image shape | E76 | +1.85% including other changes | **Not established (one upload per side, within the reported noise)**; first read as refuted as a major effect. The full image was never timed on the host (§17) |
+| H47 | Output size costs container time on the scoring host | E76 | As H43 | **Not established (one upload per side, within the reported noise)** |
 | H48 | Asynchronous pre-faulting helps | E71 | Inside noise on the laptop | **Not shown**; off by default |
 | H49 | A two-thread trace merge helps | E71 | Inside noise on the laptop | **Not shown**; the merge itself was removed in sub14 |
 | H50 | Our threads are throttled by the CPU quota | E72, E89 | 0 throttled periods in every local run checked | **Refuted locally**; cannot be read on the host |
-| H51 | Memory handling dominates remaining process time | E77, E79, E80; then E82 | Laptop: −12.5% and −12.1% process time. Host: −0.8% | **Confirmed on the laptop, refuted for the host** (H54) |
+| H51 | Memory handling dominates remaining process time | E77, E79, E80; then E82 | Laptop: −12.5% and −12.1% process time. Host: −0.8% | **Confirmed on the laptop**; on the host **Not established (one upload per side, within the reported noise)** (H54) |
 | H52 | numpy's `log` on the Final's CPU type is within the guard's 16-ulp margin | Documentation (about 1 ulp, §9.7.5); another team's notes that the two differ on about 27% of inputs (§9.9.6); scores | Every upload since sub4 computed μ with glibc on the host and was scored | **Supported, not measured** |
-| H53 | 240,000 is reachable by the Development deadline | Decision model 0.31; second review 1–2% | Best score so far: 203,394 | **Open; very doubtful** |
-| H54 | The memory work of sub8 and sub9 is worth about 3% on the host | E82 | −0.8% | **Refuted** |
+| H53 | 240,000 is reachable by the Development deadline | Decision model 0.31; second review 1–2% | Best Development score: 203,394.4709 | **Not reached** |
+| H54 | The memory work of sub8 and sub9 is worth about 3% on the host | E82 | −0.8% | **Not established (one upload per side, within the reported noise)**; first read as refuted |
 | H55 | The scorer does not need a ledger on units whose card says so | E83, E85; organizers' issue #35 (§9.9.2) | In the code, by a valid score, and stated by the organizers | **Confirmed** |
-| H56 | The ledger skip is worth 2–3K | E85 | +5.3K | **Exceeded** |
-| H57 | Huge-page requests and up-front population cost time on the host | E90 | +0.2% with both off, bundled with a compiler change | **Not supported** |
-| H58 | Switching them off costs time on the host, as it does on the laptop | E90 | As H57 | **Refuted** |
+| H56 | The ledger skip is worth 2–3K | E85 | +5.3K (+2.9%) | **Not established (one upload per side, within the reported noise)**; first read as exceeded |
+| H57 | Huge-page requests and up-front population cost time on the host | E90 | +0.2% with both off, bundled with a compiler change | **Not established (one upload per side, within the reported noise)** |
+| H58 | Switching them off costs time on the host, as it does on the laptop | E90 | As H57 | **Not established (one upload per side, within the reported noise)**; first read as refuted |
 | H59 | The CPU quota throttles our threads | E89 | As H50 | **Refuted locally**; unknown on the host |
 | H60 | The fixed cost per container is about 0.55 s (§9.5) | Leader's score; second review | It must be at most 0.471 s | **Refuted**. The actual value is still unknown (§11.2) |
-| H61 | Warm best-of-N timing predicts the direction of a host score | E82, E85, E90; E116, E117 | Wrong for memory changes (sub9) and for sub17, whose laptop figures were better than sub16's while its score was lower | **Refuted** as a general rule; it held where work was removed outright (sub5, sub10, sub16) |
-| H62 | Per-run overheads (threads, allocation) are visible on the host | E94, E98 | The build that removed them scored 2.6% lower; it bundled five changes | **Not supported; not isolated** |
-| H63 | Building the trace in order during the run removes real work | E95; E105 | Laptop: −6.8% warm on seven units. Host: sub11m → sub16m +7.6% | **Confirmed on the host** |
-| H64 | Writing the files during the run is a net gain | E96, E103; E116, E117 | See H68 | **Supported on the host for sub17** |
-| H65 | 210,000 is reachable by the Development deadline | Second review about 18%; decision round 6 0.44 | Best score so far: 203,394; one upload left | **Open** |
-| H66 | sub13 lost because small files are encoded on one thread | E99 | Laptop: sub13 was faster than sub11 on the 27 small units (802 against 873 ms) | **Not supported by the laptop; never tested on the host**. Which of sub13's five changes cost 2.6% is still unknown (see also H83) |
+| H61 | Warm best-of-N timing predicts the direction of a host score | E82, E85, E90; E116, E117 | Wrong for memory changes (sub9) and for sub17, whose laptop figures were better than sub16's while its score was lower; held where work was removed outright (sub5 +18%, sub16 +7.6%) | **Not established (one upload per side, within the reported noise)** for the small steps; first read as refuted as a general rule |
+| H62 | Per-run overheads (threads, allocation) are visible on the host | E94, E98 | The build that removed them scored 2.6% lower; it bundled five changes | **Not established (one upload per side, within the reported noise)**; not isolated |
+| H63 | Building the trace in order during the run removes real work | E95; E105 | Laptop: −6.8% warm on seven units. Host: sub11m → sub16m +7.6% (one upload per side) | **Confirmed on the laptop; +7.6% observed on the host**, one upload per side |
+| H64 | Writing the files during the run is a net gain | E96, E103; E116, E117 | See H68 | **Not established (one upload per side, within the reported noise)** |
+| H65 | 210,000 is reachable by the Development deadline | Second review about 18%; decision round 6 0.44 | Best Development score: 203,394.4709 | **Not reached** |
+| H66 | sub13 lost because small files are encoded on one thread | E99 | Laptop: sub13 was faster than sub11 on the 27 small units (802 against 873 ms) | **Not supported by the laptop; never tested on the host**. sub13's −2.6% is itself not established (one upload per side); which of its five changes would explain it is unknown (see also H83) |
 | H67 | Trace rows always arrive in time order | E100, E101 | 29 stored fuzz cases with a negative latency | **Refuted** for negative latencies; handled natively since sub15 (E102) |
-| H68 | Writer threads during the run are a net gain | E103; E116, E117 | Laptop timing contradicted itself. Host: sub17t 199,285 against sub17n 196,165 | **Supported on the host for sub17** (+1.6%, one pair of scores) |
+| H68 | Writer threads during the run are a net gain | E103; E116, E117 | Laptop timing contradicted itself. Host: sub17t 199,285 against sub17n 196,165 (+1.6%) | **Not established (one upload per side, within the reported noise)**; first read as supported on the host for sub17 |
 | H69 | Laptop whole-process times from the unit folders measure the process | E106 | 10–20 ms per run is the input mount | **Refuted** |
-| H70 | "Fixed cost + k × laptop process time" predicts the host score | E118, E116, E117 | rms residual 3.2%, maximum 6.3% on our own builds | **Refuted** |
-| H71 | sub17 scores above sub16 (projections 197–205K, then 205–209K and 209–219K) | E116, E117 | 196,165 and 199,285 | **Refuted** |
-| H72 | Writer threads lose on the host | E116 alone | The comparison build scored lower still | **Wrong**; withdrawn after E117 |
-| H73 | Adding or strengthening a thread loses on the host; removing threads wins | E127 | The helper thread is worth +9.5% | **Refuted** for the helper thread |
-| H74 | sub16 with the helper off scores above 203,394 (held at 60/40) | E127 | 185,818 | **Refuted** |
-| H75 | The latency helper thread helps on the host | E127 | 203,394 with it, 185,818 without, same binary | **Confirmed** (+9.5%) |
-| H76 | sub18's engine is faster on the host than sub16's at equal helper setting | E128 | 193,962 against 185,818, both with the helper off | **Confirmed** (+4.4%) |
-| H77 | The branch-free heap step is a gain on the host | E128, bundled with the other engine changes | Not scored alone | **Open**; sub19a against sub19b would test it |
-| H78 | sub17's helper does not work at all on the host | 185,818 × 1.056 = 196,222 against 196,165 | Neither proved nor disproved by E128 | **Open** |
-| H79 | sub17n lost because a helper started at engine creation is placed far from the simulation thread | None | — | **Untested guess** |
-| H80 | The 25 and 27 declined fuzz cases come from helper look-ahead setting the "sensitive" flag on unused draws | E132 | A launcher-only pass declines 23 on each of sub16, sub17, sub18 | **Plausible; not confirmed by a targeted test** |
-| H81 | sub18's engine with sub16's helper beats 203,394 | sub19a upload | 199,057.7311, 2.1% below sub16 | **Refuted** |
-| H82 | 220,000 is reachable | Decision round 7 0.55; score-model agent: host process time must fall 27–46% | — | **Open** |
-| H83 | A streaming writer loses on the host (the reading of sub13 in §9.8.15) | E116, E117 | Writer threads during the run gained 1.6% on sub17 | **Contradicted** |
+| H70 | "Fixed cost + k × laptop process time" predicts the host score | E118, E116, E117 | rms residual 3.2%, maximum 6.3% on our own builds | **Refuted as a predictor** (it does not reproduce the ranking of our builds); the residuals are themselves within the reported noise (H85), so the scores could not have confirmed such a model either |
+| H71 | sub17 scores above sub16 (projections 197–205K, then 205–209K and 209–219K) | E116, E117 | 196,165 and 199,285 against 203,394 | **Not established (one upload per side, within the reported noise)**; first read as refuted |
+| H72 | Writer threads lose on the host | E116 alone | The comparison build scored lower still | **Withdrawn** after E117; neither reading is established (one upload per side, within the reported noise) |
+| H73 | Adding or strengthening a thread loses on the host; removing threads wins | E127 | sub16 with the helper 203,394, without 185,818 | **Not established (one upload per side, within the reported noise)**; first read as refuted for the helper thread |
+| H74 | sub16 with the helper off scores above 203,394 (held at 60/40) | E127 | 185,818 | **Not established (one upload per side, within the reported noise)**; first read as refuted |
+| H75 | The latency helper thread helps on the host | E127 | 203,394 with it, 185,818 without, same binary (+9.5%) | **Not established (one upload per side, within the reported noise)**; first read as confirmed |
+| H76 | sub18's engine is faster on the host than sub16's at equal helper setting | E128 | 193,962 against 185,818, both with the helper off (+4.4%) | **Not established (one upload per side, within the reported noise)**; first read as confirmed |
+| H77 | The branch-free heap step is a gain on the host | E128, bundled with the other engine changes | Not scored alone; no upload was left for sub19b | **Not tested** |
+| H78 | sub17's helper does not work at all on the host | 185,818 × 1.056 = 196,222 against 196,165 | Rests on E127 and E128, neither of which is established | **Open** |
+| H79 | sub17n lost because a helper started at engine creation is placed far from the simulation thread | None | That sub17n lost at all is not established (E117) | **Untested guess** |
+| H80 | The 25 and 27 declined fuzz cases come from helper look-ahead setting the "sensitive" flag on unused draws | E132 | A launcher-only pass declines 23 on each of sub16, sub17, sub18; the mechanism traced in the code while preparing the Final (§9.10.3) | **Supported by the code**; fixed in the Final image |
+| H81 | sub18's engine with sub16's helper beats 203,394 | sub19a upload | 199,057.7311, 2.1% below sub16 | **Not established (one upload per side, within the reported noise)**; first read as refuted |
+| H82 | 220,000 is reachable | Decision round 7 0.55; score-model agent: host process time must fall 27–46% | Best Development score: 203,394.4709 | **Not reached** |
+| H83 | A streaming writer loses on the host (the reading of sub13 in §9.8.15) | E116, E117 | Writer threads during the run gained 1.6% on sub17 | **Not established (one upload per side, within the reported noise)**; first read as contradicted. sub13's −2.6% is not established either |
+| H84 | The sub16 binary with writer threads on scores above sub16 | E137 | Below sub16; exact score not recorded | **Not established (one upload per side, within the reported noise)**; first read as refuted |
+| H85 | Single Development uploads that differ by a few percent show a real difference | E140 | Another team: identical images up to 14% apart; organizers could not tell drift from noise | **Weakened** |
+| H86 | The last-resort ABIDES path works under the runtime restrictions | E141, E146 | sub16 full image: `OSError` on `./log`, no files; Final image after the fix: tables equal to the reference | **Refuted** for sub16; **confirmed** for the Final image |
+| H87 | The hand-over decision does not depend on thread timing | E142 (the code, and the 23 against 22 of §9.9.16) | Helper look-ahead could raise the flag for unconsumed draws; no repeat of one unit was caught writing different bytes | **Refuted** for sub16's helper code by reading the code; fixed in the Final image (E143, E144) |
+| H88 | The full image costs little in the Final window against the scratch image | Decision round 8 | More than 1% below scratch 0.36; more than 3% below 0.23 | **Untested**; judgment only |
+| H89 | At least one sealed scenario is handed over to the Python path | Decision round 8 | 0.56 | **Unknown**: per-unit outcomes are hidden |
+| H90 | The Final image passes every unit, public and sealed | E150 | Finished, 1,755,232.6496, no problems listed | **Supported**; not a unit-by-unit proof |
+
+Statuses that rest on one Development upload per side and a difference of a few percent are **Not established (one upload per side, within the reported noise)**: another team reported identical images scoring up to 14% apart on the Development board (H85, E140, §9.10.2). The observed numbers are kept, and where a row was first read otherwise, that reading is kept as "first read as ...". This covers H41, H43, H46, H47, H54, H56, H57, H58, H61, H62, H64, H68, H71 to H76, H81, H83 and H84. The larger steps, +18% (sub5 over sub4, H32) and +7.6% (sub16 over sub11, H63), are kept as observed, with one upload per side.
 
 ---
 
@@ -2719,11 +2742,12 @@ This table ends with sub5. The failures of the following days, tooling and judgm
 - **Decision round 4:** "ship" had the highest value (2.67 of 4) but "refresh the rules checkout first" was the preferred first step (0.47 vs 0.40), and shipping before refreshing was judged an acceptable risk with probability only 0.38. Followed: the checkout was refreshed (§2.2), then sub4 was validated with the upstream harness and pushed.
 - **Decision round 5:** upload the scratch image first (0.64); best next code change: fuse trace assembly and encoding (0.92). Followed (§9.7.5).
 - **Two read-only reviews:** the first found the ledger rule that became sub10; the second showed the fitted score model to be wrong, found the total upload limit in a toolkit document (its figure of 20 was corrected to 23), and criticised the method (§9.8.7).
-- **Decision rounds 6 and 7:** round 6 valued "helper disabled" lowest (0.50); that upload turned out to be the most informative of the period. Round 7 put "sub18 beats sub16" at 0.80, which has no host answer because sub18 with its own helper was never uploaded (§9.9.6).
+- **Decision rounds 6 and 7:** round 6 valued "helper disabled" lowest (0.50); that upload gave the largest score difference of the period (−8.6%), still from one upload per side (§16.13). Round 7 put "sub18 beats sub16" at 0.80, which has no host answer because sub18 with its own helper was never uploaded (§9.9.6).
 - **Three agents:** a score-model agent (laptop time does not predict our own scores), an open-source research agent (the organizers' issue statements of §9.9.2) and an engine-review agent (nine ranked changes, five of them in sub18) (§9.9.6).
+- **Decision round 8:** the full image for the Final 0.97; that a sealed scenario would be handed over 0.56; that the full image would score more than 1% (3%) below scratch 0.36 (0.23). Followed. None of the three probabilities has a host answer: per-unit outcomes are hidden and the scratch image was not run in the Final (§9.10.4).
 
 ### 16.8 Where a unit's time actually went
-*Question:* why is sub4 33% below the leader when its engine is fast? *Looked at:* `T3_PHASES` timing inside the sub4 image, first two single runs, then best of 5 on the 10 largest units and best of 3 on all 65. *Found:* Arrow's Parquet encoding was 50–63% of the process on every unit measured and the event loop 7–15% (§7.9). §7.8 had already noted that "encode + write dominate" for small units (E37) and listed it as open work; what was missing was the measurement that it dominates large units too, and the check of what the verifier needs. *Explains:* why another round of engine work would have changed little. *Does it explain the gap to the leader?* In part. sub5 scored 181,496 (+18.0%), which closed 36% of the gap between sub4 and the then leader's 231,024; the model's forecast that sub5 would close most of it was wrong (§9.5).
+*Question:* why is sub4 33% below the leader when its engine is fast? *Looked at:* `T3_PHASES` timing inside the sub4 image, first two single runs, then best of 5 on the 10 largest units and best of 3 on all 65. *Found:* Arrow's Parquet encoding was 50–63% of the process on every unit measured and the event loop 7–15% (§7.9). §7.8 had already noted that "encode + write dominate" for small units (E37) and listed it as open work; what was missing was the measurement that it dominates large units too, and the check of what the verifier needs. *Explains:* why another round of engine work would have changed little. *Does it explain the gap to the leader?* In part. sub5 scored 181,496 (+18.0%, one upload of sub5), which closed 36% of the gap between sub4 and the then leader's 231,024; the model's forecast that sub5 would close most of it was wrong (§9.5).
 
 ### 16.9 Whether file bytes have to match the reference
 *Looked at:* `scoring.py` (`pd.read_parquet`, `_sha256_file(trace_path)` against the declared digest, footer row count), `batch.py` (same per sub-scenario, plus `reference_message_sha256` as a *declaration* that a ledger is required), `limits.py` (256 MiB), the README's description of the Final's stable-output rule. *Found:* no comparison of our file bytes with the reference's. *Tested:* official regression on sub5 and sub6, 65/65 each. *Residual doubt:* the Final scorer is private (§11.1).
@@ -2738,28 +2762,31 @@ This table ends with sub5. The failures of the following days, tooling and judgm
 *Looked at:* a system-call trace of the smallest unit (`t3-s001-price-time-priority`, 604 events). *Found:* 9.65 ms in the first `openat` of `card.toml`, 2.08 ms in the `openat` of `scenario.json`, 0.2–1.0 ms per `read`, `fstat` and `close` on those files, and under 4 ms for everything after the inputs were read. The unit folders are a Windows-backed mount. *Explains:* 10 to 20 ms per run in every whole-process figure measured from the unit folders since sub4 (§9.8.3, §9.8.15, the `fig_*.json` files). *Response:* `lab/true_p.py` copies the inputs to memory first; counters for engine work (§9.9.3). *Not explained by this:* anything about the host, which does not have this mount.
 
 ### 16.13 Whether the latency helper thread helps on the host
-*Question:* open since sub4; on the laptop the largest unit's simulation phase takes 211–220 ms with the thread and 257–298 ms without (§9.9.3), but §9.8.5 had ruled laptop thread timings out as evidence. *Test:* the sub16 binary uploaded twice, the second time with `T3_LAT_THREAD=0` set in the image's environment and nothing else changed. *Found:* 203,394 with the helper, 185,818 without: the helper is worth 9.5% of score. *Explains:* why "threads lose on the host", a pattern read from nine earlier score steps, was wrong for this thread. The upload was made on a 60/40 bet that the score would go up (§9.9.8).
+*Question:* open since sub4; on the laptop the largest unit's simulation phase takes 211–220 ms with the thread and 257–298 ms without (§9.9.3), but §9.8.5 had ruled laptop thread timings out as evidence. *Test:* the sub16 binary uploaded twice, the second time with `T3_LAT_THREAD=0` set in the image's environment and nothing else changed. *Found:* 203,394 with the helper, 185,818 without (+9.5% with the helper); one upload per side; within the reported noise; not established (another team reported identical images scoring up to 14% apart, §9.10.2). *First read as:* the helper is worth 9.5% of score, and "threads lose on the host", a pattern read from nine earlier score steps that are themselves single uploads, was wrong for this thread. The upload was made on a 60/40 bet that the score would go up (§9.9.8). *Still open:* whether the helper helps on the host at all (H75).
 
 ### 16.14 Why sub17 scored below sub16
-*Observed:* sub17n 196,165 against sub16m 203,394 (−3.6%), although counters and laptop process time both had sub17 ahead. *Checked:* sub18, which contains sub17's engine changes, against sub16, both with the helper off: +4.4% for sub18. So the engine is not the cause. *Found, by elimination:* the cause is sub17's changed helper start-up (the thread produces from engine creation instead of being woken when the run starts). *Mechanism:* **not established.** The guess that the scheduler places a thread started early far from the simulation thread is untested; a comment by the leading team that core sharing moves a large unit by about 6% shows effects of that size exist on the host (§9.9.2, §9.9.8). *Response:* sub19a and sub19b put sub16's helper code back under sub18's engine (§9.9.9); no score when this was written.
+*Observed:* sub17n 196,165 against sub16m 203,394 (−3.6%), although counters and laptop process time both had sub17 ahead. *Checked:* sub18, which contains sub17's engine changes, against sub16, both with the helper off: +4.4% for sub18. *First read, by elimination:* the engine is not the cause, so the cause is sub17's changed helper start-up (the thread produces from engine creation instead of being woken when the run starts). Both the −3.6% and the +4.4% are one upload per side; within the reported noise; not established, so the elimination is **not established** either, and neither is a mechanism. The guess that the scheduler places a thread started early far from the simulation thread is untested; a comment by the leading team that core sharing moves a large unit by about 6% shows effects of that size exist on the host (§9.9.2, §9.9.8). *Response:* sub19a and sub19b put sub16's helper code back under sub18's engine (§9.9.9). sub19a scored 199,057.7311, 2.1% below sub16 (one upload per side; within the reported noise; not established; §9.9.16).
 
 ### 16.15 Whether writer threads during the run lose on the host
-*Observed first:* sub17t (writer threads on) 199,285, below sub16m; announced as "writer threads lose". *Then:* the comparison build sub17n, the same binary with the threads off, scored 196,165. *Found:* writer threads were worth +1.6% on that binary. *Explains:* nothing yet about sub13, whose 2.6% loss is still unattributed (§9.8.15); it removes "a streaming writer loses" as a safe reading of it.
+*Observed first:* sub17t (writer threads on) 199,285, below sub16m; announced as "writer threads lose". *Then:* the comparison build sub17n, the same binary with the threads off, scored 196,165. *Found:* +1.6% with writer threads on that binary; one upload per side; within the reported noise; not established. *Explains:* nothing about sub13, whose −2.6% is itself one upload per side (§9.8.15); it does remove "a streaming writer loses" as a safe reading of it.
 
 ### 16.16 What is known about the host itself
-*Looked at:* the organizers' issue threads, collected by the research agent (§9.9.2, §9.9.6); the toolkit's DEVELOPMENT-RUNTIME document; the CodaBench competition API. *Found:* Development runs on a single machine that takes only Track 3 runs, one submission at a time, and it is the machine the Final is timed on; another team reports a fixed cost of roughly half a second per container and two runs agreeing to within 0.1%; the unit folder is mounted whole at `/input`, so `card.toml` is present; `/output` is a bind mount of a host directory; uploads are limited to 5 per day and 23 per person. *Explains:* why the "busy shared host" readings and the 1.6% noise figure of §9.4, §9.5 and §9.8 should not be relied on, and why the ledger skip is safe as built. *Still unknown:* the fixed cost per container (the organizers' calibration post had not appeared; per-unit results need the team's login and were not obtained), the filesystem behind `/output`, and how the host's scheduler places our threads.
+*Looked at:* the organizers' issue threads, collected by the research agent (§9.9.2, §9.9.6); the toolkit's DEVELOPMENT-RUNTIME document; the CodaBench competition API. *Found:* Development runs on a single machine that takes only Track 3 runs, one submission at a time, and it is the machine the Final is timed on; another team reports a fixed cost of roughly half a second per container and two runs agreeing to within 0.1%; the unit folder is mounted whole at `/input`, so `card.toml` is present; `/output` is a bind mount of a host directory; uploads are limited to 5 per day and 23 per person. *Explains:* why the "busy shared host" readings and the 1.6% noise figure of §9.4, §9.5 and §9.8 should not be relied on, and why the ledger skip is safe as built. *Later* (§9.10.2): the organizers described the machine (a KVM virtual machine on the Xeon Platinum 8570, 20 vCPUs, one NVIDIA B200) and published a calibration (create-to-remove 0.630–0.643 s for a static binary that only copies outputs, 0.165–0.173 s of it inside the Final's window), and another team reported identical images scoring up to 14% apart on the Development board, which reopens the noise question. How the calibration relates to the 0.471 s bound of §16.10 is explained in §9.10.2. *Still unknown:* our own fixed cost per container (per-unit results need the team's login and were not obtained), the filesystem behind `/output`, and how the host's scheduler places our threads.
 
 ### 16.17 Why the number of declined fuzz cases changes from build to build
-*Observed:* 22 cases handed to the Python path on sub9, 23 on sub10 to sub13, 25 on sub17, 27 on sub18, all with 1,318 of 1,318 correct. *Checked:* a launcher-only pass gives 23 on each of sub16, sub17 and sub18 (19 non-boolean flag, 4 `log`-sensitive). *Explanation, not confirmed by a targeted test:* the helper thread draws ahead, and a draw the run never consumes can still raise the sensitivity flag; a larger ring looks further ahead. *Matters because:* a scratch image scores zero on a declined unit. *Response:* a fix in the source only, not in any image and not fuzz-replayed (§9.9.10).
+*Observed:* 22 cases handed to the Python path on sub9, 23 on sub10 to sub13, 25 on sub17, 27 on sub18, all with 1,318 of 1,318 correct. *Checked:* a launcher-only pass gives 23 on each of sub16, sub17 and sub18 (19 non-boolean flag, 4 `log`-sensitive). *Explanation, not confirmed by a targeted test:* the helper thread draws ahead, and a draw the run never consumes can still raise the sensitivity flag; a larger ring looks further ahead. *Matters because:* a scratch image scores zero on a declined unit. *Response:* a fix in the source only (§9.9.10). While preparing the Final the mechanism was traced in the code, and a fix for sub16's engine ships in the Final image, whose replay hands 22 to the Python path (§9.10.3).
 
 ### 16.18 Whether laptop time can be turned into a score
 *Looked at:* by the score-model agent, the scores of our own builds against their laptop process times. *Found:* a model "fixed cost + k × laptop process time" leaves an rms residual of 3.2% (maximum 6.3%) and cannot reproduce the ranking of our builds; the smallest structure that fits needs five parameters on six points. Its two predictions for sub17n (205–209K or 189–194K) bracketed the result (196,165) without either being right. *Consequence:* no further projections; three had already been given that day and all were wrong (§9.9.8).
+
+### 16.19 Why the last-resort path would have failed in the Final
+*Looked at:* the organizers' baseline bug (ABIDES writes `summary_log.bz2` under `./log/` at the end of every run; fixed upstream in `fe32378`), then our own image with the reference path forced under the Final's restrictions (`lab/ref_path_check.sh`). *Found:* the sub16 full image exited with `OSError: [Errno 30] Read-only file system: './log'` on a single unit; the batch path, which changes into a temporary directory, completed. *Explains:* why the full image's fallback, the reason for choosing it, would not have saved a declined single input before the fix. *Response:* `log_dir` in a fresh temporary directory; the Final image's forced reference run matches the reference tables (§9.10.3, §9.10.4).
 
 ---
 
 ## 17. Evidence status: verified, partly verified, not verified
 
-State at the time of writing.
+State after the Final was scored (§9.10). Rows that said the Final had not run or that its image was undecided are marked superseded.
 
 **Verified by measurement in this project**
 
@@ -2771,24 +2798,21 @@ State at the time of writing.
 | The rewritten engine is byte-identical through the Python path too | `native/engine/try_all.py`: 65/65, run 3 times with the helper thread |
 | Engine loop cost fell 37% in cycles per event from sub3 to sub4 | `native/engine/bench.cpp`, same session |
 | The scoring rule changed partway through the Development phase | Organizer comment, upstream README, live board |
-| Development scores under the new rule | sub4 153,825.02 and 151,386.96; sub5 181,495.89; sub7 184,857.72; sub9 183,419.75; sub10 188,687.15; sub11 189,018.28; sub13 184,046.62; sub16 203,394.47; sub17 196,164.84 (writer threads off) and 199,285.22 (on); sub16 with the helper off 185,818.35; sub18 with the helper off 193,962.28. Read from CodaBench by the team (§9.4, §9.5, §9.8.1, §9.9.1) |
+| Development scores under the new rule | sub4 153,825.02 and 151,386.96; sub5 181,495.89; sub7 184,857.72; sub9 183,419.75; sub10 188,687.15; sub11 189,018.28; sub13 184,046.62; sub16 203,394.47; sub17 196,164.84 (writer threads off) and 199,285.22 (on); sub16 with the helper off 185,818.35; sub18 with the helper off 193,962.28; sub19a 199,057.73; sub16t below sub16, exact score not recorded. Read from CodaBench by the team (§9.4, §9.5, §9.8.1, §9.9.1) |
 | From sub5 on, the output files read back as the same tables as the byte-verified sub4 files, on 65 scenarios and 30 batch sub-scenarios | `native/engine/check_fast.py`, `check_batch_tables.py`; the tables and batch stages of every `lab/bench/validate_sub<N>.log` |
-| Full validation (tables 65/65, repeat-run bytes 65/65, batch 6/6, fallback run, organizers' regression 65/65, fuzz replay 1,318/1,318) | Passed by sub7, sub8, sub9, sub10, sub11, sub12, sub13, sub14, sub17 and sub18 (`lab/bench/validate_sub<N>.log`) |
+| Full validation (tables 65/65, repeat-run bytes 65/65, batch 6/6, fallback run, organizers' regression 65/65, fuzz replay 1,318/1,318) | Passed by sub7, sub8, sub9, sub10, sub11, sub12, sub13, sub14, sub17, sub18, sub19a, sub19b and the Final image (`lab/bench/validate_sub<N>.log`, `validate_final.log`) |
 | The stored fuzz corpus is reproduced by the current engine line | 1,318 of 1,318 on the builds of the previous row (§9.7.2, §9.9.5, §9.9.7) |
 | The uploaded scratch images were checked before upload | sub7: all 65 scenarios and the 6 batch units under the full restriction set (§9.7.4). sub10: the six no-ledger units (§9.8.3). sub11 and sub13: binary identical to the validated full image, organizers' regression 65/65, batch 6/6, six no-ledger units (§9.8.4, §9.8.8). sub16, sub17 (both variants) and sub18 (both variants): the same four checks (`lab/bench/scratch_sub16m.log`, `scratch_sub17n.log`, `scratch_sub17t.log`, `scratch_sub18n.log`, `scratch_sub18h0.log`). This report holds no record of a separate check of the sub9 scratch image |
 | Declared hashes are the real file hashes, with either SHA-256 implementation | Recomputed with `hashlib` in every check; portable path forced on 4 scenarios per image (sub5, sub6) |
 | The outputs are deterministic at the byte level | 3 runs × 65 scenarios in every full validation |
 | The ledger may be left out on the six single units whose card says so, and `card.toml` is present on the official runner | Scorer and README read (§9.8.3); `lab/check_skip.sh` 6 of 6; valid scores since sub10; organizers' statement in issue #35 (§9.9.2) |
-| Image shape and output size are minor on the host | sub7: +1.85% over sub5 with a 2.2 MB image and 5.6× smaller files (§9.7.6) |
-| The memory work of sub8 and sub9 gained nothing on the host | sub9: −0.8% against sub7 (§9.8.2) |
-| Building the trace in final order during the run is a large gain on the host | sub11 → sub16: +7.6% (§9.9.4) |
-| The latency helper thread helps on the host | Same binary with and without it: 203,394 against 185,818 (§9.9.8) |
-| sub18's engine is faster on the host than sub16's at equal helper setting | Both with the helper off: 193,962 against 185,818 (§9.9.8) |
-| Writer threads during the run are a small gain on the host on the sub17 binary | 199,285 against 196,165 (§9.9.8) |
 | The 29 negative-latency fuzz cases are handled by the launcher since sub15 | `lab/quick_checks.sh`, with no Python reachable (§9.8.15) |
 | The laptop's unit folders add 10 to 20 ms per run | System-call trace (§9.9.3) |
 | Hardware counters on one thread repeat to ±0.00% (instructions), under 0.5% (branch misses), 0.5–2% (cycles) | §9.9.3 |
-| The upload limits are 5 per day and 23 per person | CodaBench competition API (§9.9.1) |
+| The upload limits are 5 per day and 23 per person; the Final one per person | CodaBench competition API (§9.9.1, §9.10.2) |
+| The sub16 full image's last-resort ABIDES path crashed on a read-only root | `lab/bench/refpath_sub16/single.err` (§9.10.3) |
+| The Final image passes the full validation and the forced reference path under the Final's restrictions; the pushed digest pulls back and reproduces the reference | `lab/bench/validate_final.log`, `checks_finalm.log`, `fuzz_final.log`, `refpath_final/`, `refpath_finalm/`, `pullcheck/` (§9.10.4) |
+| The Final upload ran to the end and was scored | Upload 993712, status Finished, 1,755,232.6496; read from CodaBench by the team (§9.10.5) |
 | The full reproduction kit runs end to end against sub4 | `repro/out/full_run_sub4.log`, attempt 3 (§12.7) |
 
 **Partly verified**
@@ -2797,35 +2821,42 @@ State at the time of writing.
 |---|---|
 | sub16, the best-scoring build, is correct beyond the public units | Everything passed; the fuzz replay stopped at 200 of 1,318 in the validation run and gave 1,318 of 1,318 in a separate run on the same image (that the tag was unchanged rests on the image's creation time) |
 | sub19a and sub19b are correct | Both byte-identical to sub16 on 65/65 units; sub19a passed the full validation (fuzz 1,318 of 1,318) and the scratch image checks, is pushed and has a host score. sub19b passed the full validation in its full image |
-| The sensitivity-flag fix of §9.9.10 | Byte-identical on 65/65 with the helper on and off; in no image; not fuzz-replayed |
-| Why the count of declined fuzz cases varies (helper look-ahead) | Consistent with a launcher-only pass; no targeted test |
+| The sensitivity-flag fix of §9.9.10 | Byte-identical on 65/65 with the helper on and off; in no image; not fuzz-replayed. *Superseded:* a fix of the same defect for sub16's engine is in the Final image, whose replay gave 1,318 of 1,318 (§9.10.4) |
+| Why the count of declined fuzz cases varies (helper look-ahead) | Consistent with a launcher-only pass and traced in the code (§9.10.3); no repeat of one unit was caught writing different bytes |
 | Helper thread is safe with fewer than 2 CPUs | Gate and inline mode tested; no run in a container actually limited to 1 CPU |
 | `log`-sensitivity detection makes glibc's `log` safe | Triggered on 4 stored fuzz cases, where the fallback reproduced the reference; the 16-ulp bound rests on documentation; scored uploads on the host are consistent with it; no direct comparison on an AVX-512 machine |
 | Launcher declines correctly on odd inputs | The 22 to 27 declined fuzz cases pass through the Python path in the full image. In a scratch image a declined case exits with status 127 by design |
-| Run-to-run variation on the host is small | Stated by the organizers (one dedicated machine) and by another team (0.1%); we have no repeat upload of one digest. Our 1.6% is from two uploads not checked to be identical |
+| Run-to-run variation on the host is small | Contradicted since: another team reported identical images up to 14% apart on the Development board, and the organizers could not tell drift from noise (issue #37, §9.10.2). Earlier statements of a small variation came from the organizers (one dedicated machine) and another team; we have no repeat upload of one digest, and our 1.6% is from two uploads not checked to be identical |
 | The CPU quota does not throttle our threads | 0 throttled periods locally (§9.7.3, §9.8.5); not readable on the host |
 | Parallel Parquet encoding is faster | Identical output shown; speed difference inside laptop noise |
 | The verifier does not need reference-identical bytes | True of the public scorer and harness and of Development scoring; the Final scorer is not public |
+| Every Final unit, public and sealed, passed | The run summary listed no problems; it shows no per-unit outcomes (§9.10.5) |
 | The writer is correct beyond the public data | Paths listed in §11.1 were never exercised |
+| Building the trace in final order during the run is a large gain on the host | sub11 → sub16: +7.6% observed (§9.9.4), larger than the reported noise of a few percent but from one upload per side; no repeat upload |
 | The uploads carried the digests this report names | sub4: taken from the submission record, not checked independently (§9.4). Later uploads: the descriptor is sealed with the digest by `sub/build_submission.py`; the zips are built and uploaded by the team |
 
 **Not verified / not done**
 
 | Item | Note |
 |---|---|
-| The fixed cost per container on the host | At most 0.471 s from the leader's score; per-unit results were never obtained; the organizers' calibration post had not appeared |
-| Why sub17 scored 3.6% below sub16 | By elimination its changed helper start-up; mechanism not established, the placement explanation is a guess (§16.14) |
-| Which of sub13's five changes cost 2.6% | Not isolated (§9.8.15) |
+| Our fixed cost per container on the host | Per-unit results were never obtained. On the organizers' calibration (0.630–0.643 s create-to-remove) and the 0.471 s bound, see §9.10.2 |
+| Image shape and output size are minor factors on the host | First listed as verified. The only test, sub7 over sub5 (+1.85%, §9.7.6), is one bundled pair that also changed the output encoding, inside the reported noise. The full image's timing on the host was never measured; choosing it for the Final was a risk decision (all-or-nothing correctness on sealed scenarios), not a measured one |
+| Host effects of a few percent read from one upload per side | Each one upload per side; within the reported noise; not established: the memory work of sub8 and sub9 (sub9 −0.8%), the ledger skip (sub10 +2.9%), the memory switches (sub11 +0.2%), sub13's −2.6%, the latency helper thread (+9.5%, same binary), sub18's engine at equal helper setting (+4.4%), writer threads on the sub17 binary (+1.6%), sub19a (−2.1% against sub16, +2.6% against sub18 with the helper off), sub16t below sub16. Of these, the memory work, the helper thread, sub18's engine and the writer threads were earlier listed as verified (§10, §15) |
+| Whether sub17's 3.6% below sub16 is real, and if so why | One upload per side; the reading "by elimination, its helper start-up" rests on two such pairs and is not established; the placement explanation is a guess (§16.14) |
+| Whether sub13's −2.6% is real, and which of its five changes would explain it | One upload per side; not isolated (§9.8.15) |
 | Whether the branch-free heap step is a gain on the host by itself | Not scored alone (H77) |
 | sub18 with its own sleeping helper on the host | Pushed, never uploaded |
-| Scores of sub19a and sub19b | None when §9.9 was written |
+| Score of sub19b | Never uploaded (sub19a scored 199,057.7311, §9.9.16) |
+| sub16t's exact Development score | Not recorded (§9.10.1) |
 | The gap to the leader (203,394 against 231,024) | Unexplained. No public code from the leading teams (§9.9.6) |
 | Scores of sub3, sub6, sub8, sub12, sub14, sub15 | Never uploaded |
 | The 22-case fuzz re-check through `recheck_launcher.py` | Never run; replaced by the 1,318-case replay |
 | A fresh fuzz campaign against the current engine and writer | Not done since the sub1 campaign |
 | The filesystem behind `/output` | Known to be a bind mount of a host directory; nothing more |
 | Behaviour of numpy's `log` on an AVX-512 host, measured directly | No such hardware here |
-| The Final's 5-run protocol | Not rehearsed with `throughput/timer.py`; the organizers' rehearsal was postponed |
-| Sealed units | Unknown by definition; the Final image (scratch or full) is undecided |
+| The Final's 5-run protocol, rehearsed locally | Never rehearsed with `throughput/timer.py`. *Superseded in part:* the Final itself ran on the image and was scored (§9.10.5) |
+| Sealed units | Unknown by definition. *Superseded:* the Final image is the full image (§9.10.4); per-unit outcomes are hidden |
+| The Final rank | Hidden until results are published |
+| The full image's cost against the scratch image on the host | Never measured (H88); the full image was chosen for the Final as a risk decision |
 | A measurement on native Linux | Never made |
 | Engine ideas of the last engine review that were not implemented (bottom-up pop, noise-trader draws on the helper thread, prefetching, lazy passive receipts) | Estimates only (§9.9.6) |

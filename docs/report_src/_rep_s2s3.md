@@ -2,7 +2,7 @@
 
 Source: organizer post on `Agenthon-2026/track3-simulation-public` issue #2 and the README at upstream commit `bffb572` ("On the Development board your score is measured by the organizers' harness…"). Both were read directly; the leaderboard at agenthon.net was fetched the same day.
 
-| Item | Old rule (until the scoring change) | New Development rule | Planned Final |
+| Item | Old rule (until the scoring change) | New Development rule | Final (as published, §9.10.2) |
 |---|---|---|---|
 | Numerator | Self-reported `n_events` | Verified row count of the trace (batch: total over markets) | Same |
 | Denominator | Self-reported `wall_clock_sec` (our scope: the event loop) | Container time measured by the harness, **create → remove** | Docker `State.StartedAt → FinishedAt` |
@@ -10,7 +10,7 @@ Source: organizer post on `Agenthon-2026/track3-simulation-public` issue #2 and 
 | Cap | 10M per unit | None in the published scorer (not relevant at these magnitudes) | Plan value not published |
 | Self-reported rate | Ranked | Only consistency-checked (±5% of `n_events ÷ wall_clock_sec`; refused above 1e9 per market) | Same |
 | Event count | Tier-A exact | Must equal the reference **exactly on every unit, Tier B included** | Same |
-| Resources | — | 4-CPU quota (`--cpus=4`, not pinned), 16 GiB, `runc`, read-only root, 64 MiB noexec `/tmp`, uid 65534, 256 PIDs | Dedicated Xeon Platinum 8570 host, 300 s per run |
+| Resources | — | 4-CPU quota (`--cpus=4`, not pinned), 16 GiB, `runc`, read-only root, 64 MiB noexec `/tmp`, uid 65534, 256 PIDs | Same restrictions; GPU attached through CDI; a KVM virtual machine on a Xeon Platinum 8570 (20 vCPUs, one NVIDIA B200); 300 s per run |
 | Output | — | Each file and the total ≤ 256 MiB | Same |
 | Image | Interface label | Interface label; must stay pullable | Additionally no Docker `VOLUME` |
 

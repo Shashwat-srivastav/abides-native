@@ -18,6 +18,7 @@ import hashlib
 import json
 import pathlib
 import resource
+import tempfile
 import time
 from typing import Any, Optional
 
@@ -64,7 +65,11 @@ def simulate(
     reset_abides_counters()
     config = build_config(scenario)
     t0 = time.perf_counter()
-    end_state = abides.run(config)
+    # ABIDES writes summary_log.bz2 under ./log/<log_dir> at the end of every run, whatever skip_log
+    # says. The working directory is on the read-only root in the benchmark, so give it an absolute
+    # directory under /tmp (an absolute log_dir replaces ./log in os.path.join). One per run, so
+    # parallel batch workers never share it.
+    end_state = abides.run(config, log_dir=tempfile.mkdtemp(prefix="abides-log-"))
     wall_clock_sec = time.perf_counter() - t0
     peak_memory_bytes = _peak_rss_bytes()
 

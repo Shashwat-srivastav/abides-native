@@ -2,7 +2,7 @@
 
 Image `slashalpha/agenthon-track3:native-v5`, `sha256:eb90d781431939ce0357290851f4b08f178dfd654d5de2e53feaefa4f117ab06` (773 MB). Contents: §7.9. The team approved the push ("lets submit sub5 in parallel"); `sub/submission.json` was updated to this digest. Building `submission.zip` and uploading are the team's steps (§12.9).
 
-**Score.** Submission 969765 finished with **181,495.8931** (CodaBench). That is +18.0% over sub4's 153,825. It is **below the 185–220K range our model gave beforehand** (the "Estimate" paragraph further down, kept as written). The board was not re-fetched after this upload, so the new rank is not recorded here; against the board fetched earlier that day the score would sit just under the then 8th place (181,826).
+**Score.** Submission 969765 finished with **181,495.8931** (CodaBench). That is +18.0% over sub4's 153,825 (one upload per side; larger than the spread reported between identical images, §9.10.2, but not repeated). It is **below the 185–220K range our model gave beforehand** (the "Estimate" paragraph further down, kept as written). The board was not re-fetched after this upload, so the new rank is not recorded here; against the board fetched earlier that day the score would sit just under the then 8th place (181,826).
 
 **Re-fit with two scores.** With sub4 = 153,825 and sub5 = 181,496 the two-parameter model has one solution: host-speed factor k = 0.50 (their host runs our process about twice as fast as this laptop) and fixed overhead 0.551 s per container. With those values the model gives sub6 = 183,095 and a zero-process-time ceiling of **208,565**.
 
@@ -15,7 +15,7 @@ Image `slashalpha/agenthon-track3:native-v5`, `sha256:eb90d781431939ce0357290851
 | The overhead is not one constant (it varies by unit, or teams with smaller images or fewer layers start faster) | Part of the "fixed" cost is ours to reduce | Image-size experiment (e.g. a much smaller runtime image) |
 | Run-to-run variation on the shared host | The two scores are each a single run; our two sub4 uploads differed by 1.6% | Re-upload the same image |
 
-*(What became of these candidates: output size and image shape were tested by the sub7 scratch upload and found to be minor (§9.7.6); the fitted model itself was shown to be wrong (§9.8.7); on run-to-run variation see the note in §9.4, which also applies to "the shared host's run-to-run variation" in the last paragraph of this section.)*
+*(What became of these candidates: output size and image shape were never isolated. The sub7 scratch upload scored 1.85% above sub5, but it was one bundled pair (it also changed the output encoding and process time), one upload per side, inside the reported noise (§9.7.6, §9.10.2); the full image's timing on the host was never measured, so neither factor is shown to be minor. The fitted model itself was shown to be wrong (§9.8.7); on run-to-run variation see the note in §9.4, which also applies to "the shared host's run-to-run variation" in the last paragraph of this section.)*
 
 Under the fitted model alone, 300,000 is out of reach; because the model is contradicted by the leader's score, that conclusion is not firm either.
 
